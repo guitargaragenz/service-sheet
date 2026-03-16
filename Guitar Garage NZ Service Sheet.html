@@ -412,7 +412,11 @@
 
 <div class="toolbar no-print">
   <button class="toolbar-btn btn-secondary" onclick="clearForm()">Clear Form</button>
-  <button class="toolbar-btn btn-primary" onclick="window.print()">Save as PDF / Print</button>
+  <button class="toolbar-btn btn-secondary" onclick="window.print()">Save as PDF / Print</button>
+  <button class="toolbar-btn btn-primary" onclick="handleSaveToDrive()">&#x2601; Save to Google Drive</button>
+</div>
+<div style="max-width:900px; margin: 0 auto 8px; text-align:right; padding: 0 4px;">
+  <span id="driveStatus" style="display:none; font-family:'DM Sans',sans-serif; font-size:12px;"></span>
 </div>
 
 <div class="page">
@@ -739,20 +743,27 @@
 
 </div><!-- /page -->
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-  // Auto-resize textareas
+  // ── CONFIG ──
+  const CLIENT_ID = '637319161579-encggrahv59ito9rtcpdlltdod3gh8o1.apps.googleusercontent.com';
+  const FOLDER_NAME = 'GGNZ SERVICE RECORDS';
+  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+  let accessToken = null;
+
+  // ── AUTO-RESIZE TEXTAREAS ──
   function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
   }
 
-  // Init all textareas on load
   document.querySelectorAll('textarea').forEach(ta => {
     ta.style.height = 'auto';
     ta.style.height = ta.scrollHeight + 'px';
   });
 
-  // Add parts row
+  // ── ADD PARTS ROW ──
   let partsRowCount = 2;
   function addPartsRow() {
     const tbody = document.getElementById('partsBody');
@@ -773,24 +784,140 @@
     tbody.appendChild(tr);
   }
 
-  // Set today's date
+  // ── DATE ──
   const today = new Date();
   const dd = String(today.getDate()).padStart(2,'0');
   const mm = String(today.getMonth()+1).padStart(2,'0');
   const yyyy = today.getFullYear();
   document.getElementById('dateIn').placeholder = `${dd} / ${mm} / ${yyyy}`;
 
-  // Clear form
+  // ── CLEAR FORM ──
   function clearForm() {
     if (!confirm('Clear all form data?')) return;
     document.querySelectorAll('textarea').forEach(el => { el.value = ''; autoResize(el); });
     document.querySelectorAll('input[type="text"]').forEach(el => { if (el.id !== 'tech') el.value = ''; });
     document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
     document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
-    // Reset parts table to 1 row
     const tbody = document.getElementById('partsBody');
     while (tbody.rows.length > 1) tbody.deleteRow(1);
     partsRowCount = 2;
+  }
+
+  // ── GOOGLE SIGN IN ──
+  function signInAndSave() {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (response) => {
+        if (response.error) {
+          setStatus('Sign-in failed: ' + response.error, 'error');
+          return;
+        }
+        accessToken = response.access_token;
+        saveToDrive();
+      },
+    });
+    client.requestAccessToken();
+  }
+
+  // ── STATUS MESSAGE ──
+  function setStatus(msg, type = 'info') {
+    const el = document.getElementById('driveStatus');
+    el.textContent = msg;
+    el.style.color = type === 'error' ? '#C62828' : type === 'success' ? '#1B5E20' : '#1565C0';
+    el.style.display = 'block';
+  }
+
+  // ── FIND OR CREATE FOLDER ──
+  async function getOrCreateFolder() {
+    // Search for existing folder
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const searchData = await searchRes.json();
+
+    if (searchData.files && searchData.files.length > 0) {
+      return searchData.files[0].id;
+    }
+
+    // Create folder if not found
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: FOLDER_NAME,
+        mimeType: 'application/vnd.google-apps.folder',
+      }),
+    });
+    const folder = await createRes.json();
+    return folder.id;
+  }
+
+  // ── SAVE TO DRIVE ──
+  async function saveToDrive() {
+    setStatus('Connecting to Google Drive...', 'info');
+
+    try {
+      // Get job number for filename
+      const jobNo = document.getElementById('jobNo').value.trim() || 'NOJOBNO';
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      const filename = `${jobNo}_${dateStr}_ServiceSheet.html`;
+
+      setStatus('Finding GGNZ SERVICE RECORDS folder...', 'info');
+      const folderId = await getOrCreateFolder();
+
+      // Get the full page HTML
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+
+      setStatus('Uploading to Drive...', 'info');
+
+      // Upload file
+      const metadata = {
+        name: filename,
+        parents: [folderId],
+        mimeType: 'text/html',
+      };
+
+      const formData = new FormData();
+      formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      formData.append('file', blob);
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadRes.json();
+
+      if (uploadData.id) {
+        setStatus(`✓ Saved as "${filename}" in GGNZ SERVICE RECORDS`, 'success');
+      } else {
+        setStatus('Upload failed — check console for details', 'error');
+        console.error(uploadData);
+      }
+
+    } catch (err) {
+      setStatus('Error: ' + err.message, 'error');
+      console.error(err);
+    }
+  }
+
+  // ── MAIN SAVE BUTTON HANDLER ──
+  function handleSaveToDrive() {
+    if (accessToken) {
+      saveToDrive();
+    } else {
+      signInAndSave();
+    }
   }
 </script>
 </body>
