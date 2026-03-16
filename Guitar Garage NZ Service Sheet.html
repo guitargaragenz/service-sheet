@@ -870,8 +870,36 @@
       setStatus('Finding GGNZ SERVICE RECORDS folder...', 'info');
       const folderId = await getOrCreateFolder();
 
-      // Get the full page HTML
-      const htmlContent = document.documentElement.outerHTML;
+      // Bake all current field values into the HTML before saving
+      const clone = document.documentElement.cloneNode(true);
+
+      // Bake textarea values
+      const liveTAs = document.querySelectorAll('textarea');
+      const cloneTAs = clone.querySelectorAll('textarea');
+      liveTAs.forEach((ta, i) => { cloneTAs[i].textContent = ta.value; });
+
+      // Bake text input values
+      const liveInputs = document.querySelectorAll('input[type="text"]');
+      const cloneInputs = clone.querySelectorAll('input[type="text"]');
+      liveInputs.forEach((inp, i) => { cloneInputs[i].setAttribute('value', inp.value); });
+
+      // Bake checkboxes
+      const liveChecks = document.querySelectorAll('input[type="checkbox"]');
+      const cloneChecks = clone.querySelectorAll('input[type="checkbox"]');
+      liveChecks.forEach((cb, i) => {
+        if (cb.checked) { cloneChecks[i].setAttribute('checked', 'checked'); }
+        else { cloneChecks[i].removeAttribute('checked'); }
+      });
+
+      // Bake radio buttons
+      const liveRadios = document.querySelectorAll('input[type="radio"]');
+      const cloneRadios = clone.querySelectorAll('input[type="radio"]');
+      liveRadios.forEach((rb, i) => {
+        if (rb.checked) { cloneRadios[i].setAttribute('checked', 'checked'); }
+        else { cloneRadios[i].removeAttribute('checked'); }
+      });
+
+      const htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
       const blob = new Blob([htmlContent], { type: 'text/html' });
 
       setStatus('Uploading to Drive...', 'info');
