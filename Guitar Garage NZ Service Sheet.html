@@ -748,7 +748,7 @@
   // ── CONFIG ──
   const CLIENT_ID = '637319161579-encggrahv59ito9rtcpdlltdod3gh8o1.apps.googleusercontent.com';
   const FOLDER_NAME = 'GGNZ SERVICE RECORDS';
-  const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+  const SCOPES = 'https://www.googleapis.com/auth/drive';
 
   let accessToken = null;
 
@@ -832,7 +832,7 @@
   async function getOrCreateFolder() {
     // Search for existing folder
     const searchRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false")}0026fields=files(id,name)`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const searchData = await searchRes.json();
