@@ -953,7 +953,8 @@
 
   // ── MAIN BUTTON HANDLER ──
   function handleSaveToDrive() {
-    if (accessToken) { saveToDrive(); } else { signInAndSave(); }
+    // Always request a fresh token to avoid 401 expiry errors
+    signInAndSave();
   }
 
   // ── ON PAGE LOAD ──
