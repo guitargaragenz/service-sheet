@@ -857,12 +857,68 @@
     return folder.id;
   }
 
+  // ── COLLECT ALL FORM DATA ──
+  function collectFormData() {
+    const data = {};
+    // Text inputs
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
+    // Textareas - use index as key
+    document.querySelectorAll('textarea').forEach((el, i) => {
+      data['ta_' + i] = el.value;
+    });
+    // Checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
+      data['cb_' + i] = el.checked;
+    });
+    // Radio buttons
+    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
+      data['rb_' + i] = el.checked;
+    });
+    return data;
+  }
+
+  // ── RESTORE FORM DATA ──
+  function restoreFormData(data) {
+    if (!data) return;
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+      if (el.id && data[el.id] !== undefined) el.value = data[el.id];
+    });
+    document.querySelectorAll('textarea').forEach((el, i) => {
+      if (data['ta_' + i] !== undefined) { el.value = data['ta_' + i]; autoResize(el); }
+    });
+    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
+      if (data['cb_' + i] !== undefined) el.checked = data['cb_' + i];
+    });
+    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
+      if (data['rb_' + i] !== undefined) el.checked = data['rb_' + i];
+    });
+  }
+
+  // ── AUTO SAVE TO LOCALSTORAGE ──
+  function autoSave() {
+    localStorage.setItem('ggnz_draft', JSON.stringify(collectFormData()));
+  }
+
+  // ── LOAD DRAFT ON PAGE LOAD ──
+  window.addEventListener('load', () => {
+    const draft = localStorage.getItem('ggnz_draft');
+    if (draft) {
+      try { restoreFormData(JSON.parse(draft)); } catch(e) {}
+    }
+  });
+
+  // Auto-save every 30 seconds and on any input
+  setInterval(autoSave, 30000);
+  document.addEventListener('input', autoSave);
+  document.addEventListener('change', autoSave);
+
   // ── SAVE TO DRIVE ──
   async function saveToDrive() {
     setStatus('Connecting to Google Drive...', 'info');
 
     try {
-      // Get job number for filename
       const jobNo = document.getElementById('jobNo').value.trim() || 'NOJOBNO';
       const dateStr = `${yyyy}-${mm}-${dd}`;
       const filename = `${jobNo}_${dateStr}_ServiceSheet.html`;
@@ -870,36 +926,34 @@
       setStatus('Finding GGNZ SERVICE RECORDS folder...', 'info');
       const folderId = await getOrCreateFolder();
 
-      // Bake all current field values into the HTML before saving
-      const clone = document.documentElement.cloneNode(true);
+      // Build a self-contained HTML file with data embedded as JSON
+      const formData = collectFormData();
+      const dataScript = `<script id="savedData" type="application/json">${JSON.stringify(formData)}<\/script>`;
 
-      // Bake textarea values
-      const liveTAs = document.querySelectorAll('textarea');
-      const cloneTAs = clone.querySelectorAll('textarea');
-      liveTAs.forEach((ta, i) => { cloneTAs[i].textContent = ta.value; });
+      // Get page HTML and inject the data + restore script
+      const restoreScript = `
+      <script>
+        window.addEventListener('DOMContentLoaded', function() {
+          var el = document.getElementById('savedData');
+          if (!el) return;
+          var data = JSON.parse(el.textContent);
+          document.querySelectorAll('input[type="text"]').forEach(function(inp) {
+            if (inp.id && data[inp.id] !== undefined) inp.value = data[inp.id];
+          });
+          document.querySelectorAll('textarea').forEach(function(ta, i) {
+            if (data['ta_' + i] !== undefined) { ta.value = data['ta_' + i]; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+          });
+          document.querySelectorAll('input[type="checkbox"]').forEach(function(cb, i) {
+            if (data['cb_' + i] !== undefined) cb.checked = data['cb_' + i];
+          });
+          document.querySelectorAll('input[type="radio"]').forEach(function(rb, i) {
+            if (data['rb_' + i] !== undefined) rb.checked = data['rb_' + i];
+          });
+        });
+      <\/script>`;
 
-      // Bake text input values
-      const liveInputs = document.querySelectorAll('input[type="text"]');
-      const cloneInputs = clone.querySelectorAll('input[type="text"]');
-      liveInputs.forEach((inp, i) => { cloneInputs[i].setAttribute('value', inp.value); });
-
-      // Bake checkboxes
-      const liveChecks = document.querySelectorAll('input[type="checkbox"]');
-      const cloneChecks = clone.querySelectorAll('input[type="checkbox"]');
-      liveChecks.forEach((cb, i) => {
-        if (cb.checked) { cloneChecks[i].setAttribute('checked', 'checked'); }
-        else { cloneChecks[i].removeAttribute('checked'); }
-      });
-
-      // Bake radio buttons
-      const liveRadios = document.querySelectorAll('input[type="radio"]');
-      const cloneRadios = clone.querySelectorAll('input[type="radio"]');
-      liveRadios.forEach((rb, i) => {
-        if (rb.checked) { cloneRadios[i].setAttribute('checked', 'checked'); }
-        else { cloneRadios[i].removeAttribute('checked'); }
-      });
-
-      const htmlContent = '<!DOCTYPE html>\n' + clone.outerHTML;
+      let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      htmlContent = htmlContent.replace('</body>', dataScript + restoreScript + '</body>');
       const blob = new Blob([htmlContent], { type: 'text/html' });
 
       setStatus('Uploading to Drive...', 'info');
