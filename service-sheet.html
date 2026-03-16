@@ -749,8 +749,14 @@
   const CLIENT_ID = '637319161579-encggrahv59ito9rtcpdlltdod3gh8o1.apps.googleusercontent.com';
   const FOLDER_NAME = 'GGNZ SERVICE RECORDS';
   const SCOPES = 'https://www.googleapis.com/auth/drive';
-
   let accessToken = null;
+  let partsRowCount = 2;
+
+  // ── DATE ──
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yyyy = today.getFullYear();
 
   // ── AUTO-RESIZE TEXTAREAS ──
   function autoResize(el) {
@@ -758,13 +764,7 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
-  document.querySelectorAll('textarea').forEach(ta => {
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
-  });
-
   // ── ADD PARTS ROW ──
-  let partsRowCount = 2;
   function addPartsRow() {
     const tbody = document.getElementById('partsBody');
     const n = partsRowCount++;
@@ -784,16 +784,9 @@
     tbody.appendChild(tr);
   }
 
-  // ── DATE ──
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2,'0');
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const yyyy = today.getFullYear();
-  document.getElementById('dateIn').placeholder = `${dd} / ${mm} / ${yyyy}`;
-
   // ── CLEAR FORM ──
   function clearForm() {
-    if (!confirm('Clear all form data?')) return;
+    if (!confirm('Clear all form data? This will also clear the auto-saved draft.')) return;
     document.querySelectorAll('textarea').forEach(el => { el.value = ''; autoResize(el); });
     document.querySelectorAll('input[type="text"]').forEach(el => { if (el.id !== 'tech') el.value = ''; });
     document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
@@ -801,6 +794,147 @@
     const tbody = document.getElementById('partsBody');
     while (tbody.rows.length > 1) tbody.deleteRow(1);
     partsRowCount = 2;
+    localStorage.removeItem('ggnz_draft');
+  }
+
+  // ── COLLECT FORM DATA ──
+  function collectFormData() {
+    const data = { inputs: {}, textareas: [], checkboxes: [], radios: [] };
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+      data.inputs[el.id || el.name || 'idx_' + Array.from(document.querySelectorAll('input[type="text"]')).indexOf(el)] = el.value;
+    });
+    document.querySelectorAll('textarea').forEach(el => data.textareas.push(el.value));
+    document.querySelectorAll('input[type="checkbox"]').forEach(el => data.checkboxes.push(el.checked));
+    document.querySelectorAll('input[type="radio"]').forEach(el => data.radios.push(el.checked));
+    return data;
+  }
+
+  // ── RESTORE FORM DATA ──
+  function restoreFormData(data) {
+    if (!data) return;
+    const textInputs = document.querySelectorAll('input[type="text"]');
+    textInputs.forEach(el => {
+      const key = el.id || el.name || 'idx_' + Array.from(textInputs).indexOf(el);
+      if (data.inputs && data.inputs[key] !== undefined) el.value = data.inputs[key];
+    });
+    if (data.textareas) {
+      document.querySelectorAll('textarea').forEach((el, i) => {
+        if (data.textareas[i] !== undefined) { el.value = data.textareas[i]; autoResize(el); }
+      });
+    }
+    if (data.checkboxes) {
+      document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
+        if (data.checkboxes[i] !== undefined) el.checked = data.checkboxes[i];
+      });
+    }
+    if (data.radios) {
+      document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
+        if (data.radios[i] !== undefined) el.checked = data.radios[i];
+      });
+    }
+  }
+
+  // ── AUTO-SAVE TO LOCALSTORAGE ──
+  function autoSave() {
+    try { localStorage.setItem('ggnz_draft', JSON.stringify(collectFormData())); } catch(e) {}
+  }
+
+  // ── STATUS MESSAGE ──
+  function setStatus(msg, type) {
+    const el = document.getElementById('driveStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = type === 'error' ? '#C62828' : type === 'success' ? '#1B5E20' : '#1565C0';
+    el.style.display = 'block';
+  }
+
+  // ── FIND OR CREATE FOLDER ──
+  async function getOrCreateFolder() {
+    const q = encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await res.json();
+    if (data.files && data.files.length > 0) return data.files[0].id;
+    // Create if not found
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+    });
+    const folder = await createRes.json();
+    return folder.id;
+  }
+
+  // ── SAVE TO DRIVE ──
+  async function saveToDrive() {
+    setStatus('Saving to Google Drive...', 'info');
+    try {
+      const jobNo = document.getElementById('jobNo').value.trim() || 'NOJOBNO';
+      const filename = `${jobNo}_${yyyy}-${mm}-${dd}_ServiceSheet.html`;
+
+      setStatus('Finding folder...', 'info');
+      const folderId = await getOrCreateFolder();
+
+      // Embed form data as JSON into a self-restoring HTML file
+      const savedData = JSON.stringify(collectFormData());
+      const sc = 'script';
+      const restoreScript = [
+        '<' + sc + ' id="ggnz-data" type="application/json">' + savedData + '</' + sc + '>',
+        '<' + sc + '>',
+        'window.addEventListener("DOMContentLoaded", function() {',
+        '  try {',
+        '    var raw = document.getElementById("ggnz-data").textContent;',
+        '    var data = JSON.parse(raw);',
+        '    var textInputs = document.querySelectorAll("input[type=text]");',
+        '    textInputs.forEach(function(el, i) {',
+        '      var key = el.id || el.name || "idx_" + i;',
+        '      if (data.inputs && data.inputs[key] !== undefined) el.value = data.inputs[key];',
+        '    });',
+        '    document.querySelectorAll("textarea").forEach(function(el, i) {',
+        '      if (data.textareas && data.textareas[i] !== undefined) {',
+        '        el.value = data.textareas[i];',
+        '        el.style.height = "auto";',
+        '        el.style.height = el.scrollHeight + "px";',
+        '      }',
+        '    });',
+        '    document.querySelectorAll("input[type=checkbox]").forEach(function(el, i) {',
+        '      if (data.checkboxes && data.checkboxes[i] !== undefined) el.checked = data.checkboxes[i];',
+        '    });',
+        '    document.querySelectorAll("input[type=radio]").forEach(function(el, i) {',
+        '      if (data.radios && data.radios[i] !== undefined) el.checked = data.radios[i];',
+        '    });',
+        '  } catch(e) { console.error("Restore error:", e); }',
+        '});',
+        '</' + sc + '>',
+      ].join('\n');
+
+      let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      html = html.replace('</body>', restoreScript + '\n</body>');
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const meta = { name: filename, parents: [folderId], mimeType: 'text/html' };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', blob);
+
+      setStatus('Uploading...', 'info');
+      const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form }
+      );
+      const result = await res.json();
+      if (result.id) {
+        setStatus('✓ Saved as "' + filename + '" in GGNZ SERVICE RECORDS', 'success');
+      } else {
+        setStatus('Upload failed', 'error');
+        console.error(result);
+      }
+    } catch(err) {
+      setStatus('Error: ' + err.message, 'error');
+      console.error(err);
+    }
   }
 
   // ── GOOGLE SIGN IN ──
@@ -809,10 +943,7 @@
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (response) => {
-        if (response.error) {
-          setStatus('Sign-in failed: ' + response.error, 'error');
-          return;
-        }
+        if (response.error) { setStatus('Sign-in failed: ' + response.error, 'error'); return; }
         accessToken = response.access_token;
         saveToDrive();
       },
@@ -820,187 +951,33 @@
     client.requestAccessToken();
   }
 
-  // ── STATUS MESSAGE ──
-  function setStatus(msg, type = 'info') {
-    const el = document.getElementById('driveStatus');
-    el.textContent = msg;
-    el.style.color = type === 'error' ? '#C62828' : type === 'success' ? '#1B5E20' : '#1565C0';
-    el.style.display = 'block';
-  }
-
-  // ── FIND OR CREATE FOLDER ──
-  async function getOrCreateFolder() {
-    // Search for existing folder
-    const searchRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false")}&fields=files(id,name)`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const searchData = await searchRes.json();
-
-    if (searchData.files && searchData.files.length > 0) {
-      return searchData.files[0].id;
-    }
-
-    // Create folder if not found
-    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: FOLDER_NAME,
-        mimeType: 'application/vnd.google-apps.folder',
-      }),
-    });
-    const folder = await createRes.json();
-    return folder.id;
-  }
-
-  // ── COLLECT ALL FORM DATA ──
-  function collectFormData() {
-    const data = {};
-    // Text inputs
-    document.querySelectorAll('input[type="text"]').forEach(el => {
-      if (el.id) data[el.id] = el.value;
-    });
-    // Textareas - use index as key
-    document.querySelectorAll('textarea').forEach((el, i) => {
-      data['ta_' + i] = el.value;
-    });
-    // Checkboxes
-    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
-      data['cb_' + i] = el.checked;
-    });
-    // Radio buttons
-    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
-      data['rb_' + i] = el.checked;
-    });
-    return data;
-  }
-
-  // ── RESTORE FORM DATA ──
-  function restoreFormData(data) {
-    if (!data) return;
-    document.querySelectorAll('input[type="text"]').forEach(el => {
-      if (el.id && data[el.id] !== undefined) el.value = data[el.id];
-    });
-    document.querySelectorAll('textarea').forEach((el, i) => {
-      if (data['ta_' + i] !== undefined) { el.value = data['ta_' + i]; autoResize(el); }
-    });
-    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
-      if (data['cb_' + i] !== undefined) el.checked = data['cb_' + i];
-    });
-    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
-      if (data['rb_' + i] !== undefined) el.checked = data['rb_' + i];
-    });
-  }
-
-  // ── AUTO SAVE TO LOCALSTORAGE ──
-  function autoSave() {
-    localStorage.setItem('ggnz_draft', JSON.stringify(collectFormData()));
-  }
-
-  // ── LOAD DRAFT ON PAGE LOAD ──
-  window.addEventListener('load', () => {
-    const draft = localStorage.getItem('ggnz_draft');
-    if (draft) {
-      try { restoreFormData(JSON.parse(draft)); } catch(e) {}
-    }
-  });
-
-  // Auto-save every 30 seconds and on any input
-  setInterval(autoSave, 30000);
-  document.addEventListener('input', autoSave);
-  document.addEventListener('change', autoSave);
-
-  // ── SAVE TO DRIVE ──
-  async function saveToDrive() {
-    setStatus('Connecting to Google Drive...', 'info');
-
-    try {
-      const jobNo = document.getElementById('jobNo').value.trim() || 'NOJOBNO';
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      const filename = `${jobNo}_${dateStr}_ServiceSheet.html`;
-
-      setStatus('Finding GGNZ SERVICE RECORDS folder...', 'info');
-      const folderId = await getOrCreateFolder();
-
-      // Build a self-contained HTML file with data embedded as JSON
-      const formData = collectFormData();
-      const dataScript = `<script id="savedData" type="application/json">${JSON.stringify(formData)}<\/script>`;
-
-      // Get page HTML and inject the data + restore script
-      const restoreScript = `
-      <script>
-        window.addEventListener('DOMContentLoaded', function() {
-          var el = document.getElementById('savedData');
-          if (!el) return;
-          var data = JSON.parse(el.textContent);
-          document.querySelectorAll('input[type="text"]').forEach(function(inp) {
-            if (inp.id && data[inp.id] !== undefined) inp.value = data[inp.id];
-          });
-          document.querySelectorAll('textarea').forEach(function(ta, i) {
-            if (data['ta_' + i] !== undefined) { ta.value = data['ta_' + i]; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
-          });
-          document.querySelectorAll('input[type="checkbox"]').forEach(function(cb, i) {
-            if (data['cb_' + i] !== undefined) cb.checked = data['cb_' + i];
-          });
-          document.querySelectorAll('input[type="radio"]').forEach(function(rb, i) {
-            if (data['rb_' + i] !== undefined) rb.checked = data['rb_' + i];
-          });
-        });
-      <\/script>`;
-
-      let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      htmlContent = htmlContent.replace('</body>', dataScript + restoreScript + '</body>');
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-
-      setStatus('Uploading to Drive...', 'info');
-
-      // Upload file
-      const metadata = {
-        name: filename,
-        parents: [folderId],
-        mimeType: 'text/html',
-      };
-
-      const formData = new FormData();
-      formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      formData.append('file', blob);
-
-      const uploadRes = await fetch(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: formData,
-        }
-      );
-
-      const uploadData = await uploadRes.json();
-
-      if (uploadData.id) {
-        setStatus(`✓ Saved as "${filename}" in GGNZ SERVICE RECORDS`, 'success');
-      } else {
-        setStatus('Upload failed — check console for details', 'error');
-        console.error(uploadData);
-      }
-
-    } catch (err) {
-      setStatus('Error: ' + err.message, 'error');
-      console.error(err);
-    }
-  }
-
-  // ── MAIN SAVE BUTTON HANDLER ──
+  // ── MAIN BUTTON HANDLER ──
   function handleSaveToDrive() {
-    if (accessToken) {
-      saveToDrive();
-    } else {
-      signInAndSave();
-    }
+    if (accessToken) { saveToDrive(); } else { signInAndSave(); }
   }
+
+  // ── ON PAGE LOAD ──
+  window.addEventListener('DOMContentLoaded', function() {
+    // Set date placeholder
+    document.getElementById('dateIn').placeholder = dd + ' / ' + mm + ' / ' + yyyy;
+
+    // Init textarea heights
+    document.querySelectorAll('textarea').forEach(function(ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+
+    // Restore draft if exists
+    try {
+      const draft = localStorage.getItem('ggnz_draft');
+      if (draft) restoreFormData(JSON.parse(draft));
+    } catch(e) {}
+
+    // Auto-save on input
+    document.addEventListener('input', autoSave);
+    document.addEventListener('change', autoSave);
+    setInterval(autoSave, 30000);
+  });
 </script>
 </body>
 </html>
