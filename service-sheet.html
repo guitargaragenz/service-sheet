@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Garage NZ — Electronics Service Record</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  :root {
+    --blue-900: #0D47A1;
+    --blue-800: #1565C0;
+    --blue-700: #1976D2;
+    --blue-600: #1E88E5;
+    --blue-100: #E3F2FD;
+    --blue-50:  #F0F8FF;
+    --grey-700: #444444;
+    --grey-500: #777777;
+    --grey-300: #CCCCCC;
+    --grey-100: #F5F5F5;
+    --white:    #FFFFFF;
+    --red:      #C62828;
+    --orange:   #E65100;
+    --font-main: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-main);
+    font-size: 13px;
+    color: var(--grey-700);
+    background: #e8eef7;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .page {
+    background: var(--white);
+    max-width: 900px;
+    margin: 0 auto;
+    box-shadow: 0 4px 40px rgba(13,71,161,0.15);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    background: var(--blue-800);
+  }
+
+  .header-brand {
+    padding: 18px 22px;
+    border-right: 3px solid var(--blue-600);
+  }
+
+  .header-brand .business-name {
+    font-family: var(--font-main);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .header-brand .doc-title {
+    font-size: 12px;
+    color: #90CAF9;
+    margin-top: 3px;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .header-brand .location {
+    font-size: 11px;
+    color: #64B5F6;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  .header-meta {
+    background: var(--blue-100);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .meta-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .meta-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--blue-900);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .meta-input {
+    border: none;
+    border-bottom: 1.5px solid var(--blue-300, #90CAF9);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--blue-900);
+    padding: 2px 4px;
+    width: 100%;
+    outline: none;
+  }
+
+  .meta-input:focus { border-bottom-color: var(--blue-800); }
+
+  .priority-row { display: flex; gap: 12px; align-items: center; }
+
+  .priority-option { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .priority-option input[type="radio"] { display: none; }
+  .priority-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid currentColor;
+    transition: background 0.15s;
+  }
+  .priority-option.hot  .priority-dot { border-color: var(--red); }
+  .priority-option.warm .priority-dot { border-color: var(--orange); }
+  .priority-option.cold .priority-dot { border-color: var(--grey-500); }
+  .priority-option input:checked ~ .priority-dot { background: currentColor; }
+  .priority-option.hot  input:checked ~ .priority-dot { background: var(--red);    border-color: var(--red); }
+  .priority-option.warm input:checked ~ .priority-dot { background: var(--orange); border-color: var(--orange); }
+  .priority-option.cold input:checked ~ .priority-dot { background: var(--grey-500); border-color: var(--grey-500); }
+  .priority-option span { font-size: 11px; color: var(--grey-700); }
+
+  /* ── BODY ── */
+  .body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* ── SECTION ── */
+  .section { border: 1px solid var(--blue-300, #BBDEFB); border-radius: 2px; overflow: hidden; }
+
+  .section-header {
+    background: var(--blue-800);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+  }
+
+  .section-body { background: var(--white); }
+
+  /* ── GRID ROWS ── */
+  .field-grid {
+    display: grid;
+    border-top: 1px solid var(--grey-300);
+  }
+
+  .field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .field-grid.cols-4 { grid-template-columns: 140px 1fr 140px 1fr; }
+
+  .field-cell {
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+  }
+  .field-cell:last-child { border-right: none; }
+
+  .field-label {
+    background: var(--blue-100);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--blue-900);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px 4px;
+    border-bottom: 1px solid var(--grey-300);
+  }
+
+  .field-input {
+    padding: 6px 10px;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: var(--font-main);
+    font-size: 12.5px;
+    color: var(--grey-700);
+    background: transparent;
+    resize: none;
+    line-height: 1.5;
+  }
+
+  textarea { min-height: 20px; overflow: hidden; }
+
+  /* ── CHECKBOX GRID ── */
+  .check-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    border-top: 1px solid var(--grey-300);
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+    cursor: pointer;
+  }
+  .check-item:last-child { border-right: none; }
+  .check-item:nth-child(6) { border-right: none; }
+  .check-item:nth-last-child(-n+6) { border-bottom: none; }
+
+  .check-item input[type="checkbox"] { display: none; }
+
+  .check-box {
+    width: 13px; height: 13px;
+    border: 1.5px solid var(--blue-700);
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+
+  .check-item input:checked ~ .check-box {
+    background: var(--blue-700);
+    border-color: var(--blue-700);
+  }
+
+  .check-item input:checked ~ .check-box::after {
+    content: '';
+    width: 7px; height: 4px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+
+  .check-label { font-size: 11px; color: var(--grey-700); line-height: 1.3; }
+
+  /* ── INLINE RADIO GROUP ── */
+  .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 7px 10px;
+    align-items: center;
+  }
+
+  .radio-option { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .radio-option input[type="radio"] { display: none; }
+  .radio-box {
+    width: 13px; height: 13px;
+    border: 1.5px solid var(--blue-700);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+  .radio-option input:checked ~ .radio-box { background: var(--blue-700); border-color: var(--blue-700); }
+  .radio-option input:checked ~ .radio-box::after {
+    content: ''; width: 5px; height: 5px;
+    background: white; border-radius: 50%; display: block;
+  }
+  .radio-label { font-size: 11.5px; color: var(--grey-700); }
+
+  /* ── STATIC CHECKS TABLE ── */
+  .checks-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid var(--grey-300);
+  }
+  .checks-table th {
+    background: var(--blue-100);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--blue-900);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px;
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+    text-align: left;
+  }
+  .checks-table td {
+    padding: 5px 10px;
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+    font-size: 12px;
+    vertical-align: middle;
+  }
+  .checks-table tr:last-child td { border-bottom: none; }
+  .checks-table td:last-child, .checks-table th:last-child { border-right: none; }
+
+  .pass-fail { display: flex; gap: 10px; }
+
+  /* ── PARTS TABLE ── */
+  .parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid var(--grey-300);
+  }
+  .parts-table th {
+    background: var(--blue-100);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--blue-900);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px;
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+    text-align: left;
+  }
+  .parts-table td {
+    border-right: 1px solid var(--grey-300);
+    border-bottom: 1px solid var(--grey-300);
+    vertical-align: middle;
+  }
+  .parts-table td:last-child { border-right: none; }
+  .parts-table tbody tr:last-child td { border-bottom: none; }
+  .parts-table input[type="text"] { padding: 5px 10px; font-size: 12px; }
+
+  .parts-status { display: flex; gap: 8px; padding: 5px 10px; flex-wrap: wrap; }
+
+  /* ── ADD ROW BUTTON ── */
+  .add-row-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    background: var(--blue-50);
+    color: var(--blue-700);
+    font-family: var(--font-main);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    border-top: 1px dashed var(--blue-300, #90CAF9);
+    transition: background 0.15s;
+    text-align: left;
+  }
+  .add-row-btn:hover { background: var(--blue-100); }
+  .add-row-btn::before { content: '+'; font-size: 14px; font-weight: 300; color: var(--blue-600); }
+
+  /* ── SIGN-OFF ── */
+  .signoff-grid {
+    display: grid;
+    grid-template-columns: 130px 1fr 160px 1fr;
+    border-top: 1px solid var(--grey-300);
+  }
+  .signoff-grid .field-cell { border-bottom: none; }
+  .signoff-grid .field-cell:last-child { border-right: none; }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--blue-900);
+    padding: 8px 20px;
+    text-align: center;
+    font-size: 10px;
+    color: #90CAF9;
+    letter-spacing: 0.05em;
+    font-style: italic;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; max-width: 100%; }
+    .add-row-btn { display: none; }
+    .no-print { display: none; }
+
+    textarea, input[type="text"] { font-size: 11px; }
+
+    .section { break-inside: avoid; }
+    .parts-table tbody tr { break-inside: avoid; }
+  }
+
+  /* ── SCREEN TOOLBAR ── */
+  .toolbar {
+    max-width: 900px;
+    margin: 0 auto 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .toolbar-btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 3px;
+    font-family: var(--font-main);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .toolbar-btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--blue-800); color: white; }
+  .btn-secondary { background: var(--grey-100); color: var(--grey-700); border: 1px solid var(--grey-300); }
+
+  @media print { .toolbar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <button class="toolbar-btn btn-secondary" onclick="clearForm()">Clear Form</button>
+  <button class="toolbar-btn btn-secondary" onclick="window.print()">Save as PDF / Print</button>
+  <button class="toolbar-btn btn-primary" onclick="handleSaveToDrive()">&#x2601; Save to Google Drive</button>
+</div>
+<div style="max-width:900px; margin: 0 auto 8px; text-align:right; padding: 0 4px;">
+  <span id="driveStatus" style="display:none; font-family:'DM Sans',sans-serif; font-size:12px;"></span>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-brand">
+      <div class="business-name">Guitar Garage NZ Ltd</div>
+      <div class="doc-title">Electronics Service Record</div>
+      <div class="location">Welcome Bay, Tauranga &mdash; Est. July 2015</div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-row">
+        <span class="meta-label">Job No.</span>
+        <input class="meta-input" type="text" placeholder="MT-" id="jobNo">
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Date In</span>
+        <input class="meta-input" type="text" id="dateIn" placeholder="DD / MM / YYYY">
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Technician</span>
+        <input class="meta-input" type="text" value="Trevor" id="tech">
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Priority</span>
+        <div class="priority-row">
+          <label class="priority-option hot">
+            <input type="radio" name="priority" value="hot">
+            <div class="priority-dot"></div>
+            <span>Hot</span>
+          </label>
+          <label class="priority-option warm">
+            <input type="radio" name="priority" value="warm">
+            <div class="priority-dot"></div>
+            <span>Warm</span>
+          </label>
+          <label class="priority-option cold">
+            <input type="radio" name="priority" value="cold">
+            <div class="priority-dot"></div>
+            <span>Cold</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- 1. CUSTOMER & JOB DETAILS -->
+    <div class="section">
+      <div class="section-header">1. Customer &amp; Job Details</div>
+      <div class="section-body">
+        <div class="field-grid cols-4">
+          <div class="field-cell">
+            <div class="field-label">Customer</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder=""></textarea></div>
+          </div>
+          <div class="field-cell">
+            <div class="field-label">Phone / Email</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder=""></textarea></div>
+          </div>
+          <div class="field-cell">
+            <div class="field-label">Make / Model</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder=""></textarea></div>
+          </div>
+          <div class="field-cell">
+            <div class="field-label">Serial No.</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder=""></textarea></div>
+          </div>
+        </div>
+        <div class="field-grid cols-2">
+          <div class="field-cell">
+            <div class="field-label">PSU Type</div>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="psu"><div class="radio-box"></div><span class="radio-label">Linear / Transformer</span></label>
+              <label class="radio-option"><input type="radio" name="psu"><div class="radio-box"></div><span class="radio-label">SMPS</span></label>
+              <label class="radio-option"><input type="radio" name="psu"><div class="radio-box"></div><span class="radio-label">Class D</span></label>
+              <label class="radio-option"><input type="radio" name="psu"><div class="radio-box"></div><span class="radio-label">Unknown</span></label>
+            </div>
+          </div>
+          <div class="field-cell">
+            <div class="field-label">LBL in Chain?</div>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="lbl"><div class="radio-box"></div><span class="radio-label">YES &mdash; LBL in chain</span></label>
+              <label class="radio-option"><input type="radio" name="lbl"><div class="radio-box"></div><span class="radio-label">NO &mdash; bypass LBL</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. REPORTED FAULT -->
+    <div class="section">
+      <div class="section-header">2. Reported Fault (Customer's Words)</div>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field-cell" style="border-top:none;">
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder="Describe the fault as the customer reported it..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. VISUAL INSPECTION -->
+    <div class="section">
+      <div class="section-header">3. Visual Inspection (Power Off)</div>
+      <div class="section-body">
+        <div class="check-grid">
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">No visible damage</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Burn marks / scorch</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Blown fuse(s)</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Bulged / leaking caps</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Corrosion</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Previous repair work</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Rodent damage</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Broken jacks / connectors</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Missing components</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Cracked PCB</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Water damage</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Other &mdash; see notes</span></label>
+        </div>
+        <div class="field-grid" style="border-top: 1px solid var(--grey-300);">
+          <div class="field-cell" style="border-bottom:none; border-left:none; border-right:none;">
+            <div class="field-label">Notes</div>
+            <div class="field-input"><textarea rows="2" oninput="autoResize(this)" placeholder="Additional inspection notes..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. STATIC CHECKS -->
+    <div class="section">
+      <div class="section-header">4. Static Resistance Checks (Power Off)</div>
+      <div class="section-body">
+        <table class="checks-table">
+          <thead>
+            <tr>
+              <th style="width:38%">Check</th>
+              <th style="width:15%">Result</th>
+              <th style="width:12%">Pass?</th>
+              <th style="width:27%">Check</th>
+              <th style="width:8%">Pass?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Mains earth continuity (chassis &rarr; earth pin)</td>
+              <td><input type="text" placeholder="&Omega;"></td>
+              <td>
+                <div class="pass-fail">
+                  <label class="radio-option"><input type="radio" name="ec1"><div class="radio-box"></div><span class="radio-label">P</span></label>
+                  <label class="radio-option"><input type="radio" name="ec1"><div class="radio-box"></div><span class="radio-label">F</span></label>
+                </div>
+              </td>
+              <td>Rail-to-ground (no dead shorts)</td>
+              <td>
+                <div class="pass-fail">
+                  <label class="radio-option"><input type="radio" name="ec3"><div class="radio-box"></div><span class="radio-label">P</span></label>
+                  <label class="radio-option"><input type="radio" name="ec3"><div class="radio-box"></div><span class="radio-label">F</span></label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Mains L-N resistance (open / high = good)</td>
+              <td><input type="text" placeholder="&Omega;"></td>
+              <td>
+                <div class="pass-fail">
+                  <label class="radio-option"><input type="radio" name="ec2"><div class="radio-box"></div><span class="radio-label">P</span></label>
+                  <label class="radio-option"><input type="radio" name="ec2"><div class="radio-box"></div><span class="radio-label">F</span></label>
+                </div>
+              </td>
+              <td>Speaker output &rarr; ground (amps only)</td>
+              <td>
+                <div class="pass-fail">
+                  <label class="radio-option"><input type="radio" name="ec4"><div class="radio-box"></div><span class="radio-label">P</span></label>
+                  <label class="radio-option"><input type="radio" name="ec4"><div class="radio-box"></div><span class="radio-label">F</span></label>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. POWER-UP -->
+    <div class="section">
+      <div class="section-header">5. Power-Up Observations</div>
+      <div class="section-body">
+        <div class="check-grid" style="grid-template-columns: repeat(6,1fr);">
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Normal start-up</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">LBL bright &mdash; excess current</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">High ammeter reading</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Smell / smoke</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Popping / arcing</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">No response</span></label>
+        </div>
+        <div class="field-grid" style="border-top: 1px solid var(--grey-300);">
+          <div class="field-cell" style="border-bottom:none; border-left:none; border-right:none;">
+            <div class="field-label">Notes</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder="Power-up observations..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. FAULT DIAGNOSIS -->
+    <div class="section">
+      <div class="section-header">6. Fault Diagnosis &amp; Findings</div>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field-cell" style="border-bottom:none; border-left:none; border-right:none;">
+            <div class="field-label">Findings</div>
+            <div class="field-input"><textarea rows="6" oninput="autoResize(this)" placeholder="Document your diagnostic process and findings here. This section expands automatically as you type..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. PARTS -->
+    <div class="section">
+      <div class="section-header">7. Parts Used / Ordered</div>
+      <div class="section-body">
+        <table class="parts-table" id="partsTable">
+          <thead>
+            <tr>
+              <th style="width:42%">Part Description</th>
+              <th style="width:22%">Part No. / Value</th>
+              <th style="width:8%">Qty</th>
+              <th style="width:28%">Status</th>
+            </tr>
+          </thead>
+          <tbody id="partsBody">
+            <tr>
+              <td><input type="text" placeholder=""></td>
+              <td><input type="text" placeholder=""></td>
+              <td><input type="text" placeholder="1"></td>
+              <td>
+                <div class="parts-status">
+                  <label class="radio-option"><input type="radio" name="ps1"><div class="radio-box"></div><span class="radio-label">Stock</span></label>
+                  <label class="radio-option"><input type="radio" name="ps1"><div class="radio-box"></div><span class="radio-label">Ordered</span></label>
+                  <label class="radio-option"><input type="radio" name="ps1"><div class="radio-box"></div><span class="radio-label">Fitted</span></label>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="add-row-btn no-print" onclick="addPartsRow()">Add part row</button>
+      </div>
+    </div>
+
+    <!-- 8. WORK COMPLETED -->
+    <div class="section">
+      <div class="section-header">8. Work Completed</div>
+      <div class="section-body">
+        <div class="field-grid">
+          <div class="field-cell" style="border-bottom:none; border-left:none; border-right:none;">
+            <div class="field-label">Work Done</div>
+            <div class="field-input"><textarea rows="3" oninput="autoResize(this)" placeholder="Describe all work carried out..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. TEST RESULTS -->
+    <div class="section">
+      <div class="section-header">9. Test Results</div>
+      <div class="section-body">
+        <div class="check-grid" style="grid-template-columns: repeat(6,1fr);">
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Fault confirmed resolved</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Signal traced &mdash; clean</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Bias checked / set</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">DC offset within spec</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">No abnormal current draw</span></label>
+          <label class="check-item"><input type="checkbox"><div class="check-box"></div><span class="check-label">Bench tested &mdash; PASS</span></label>
+        </div>
+        <div class="field-grid" style="border-top: 1px solid var(--grey-300);">
+          <div class="field-cell" style="border-bottom:none; border-left:none; border-right:none;">
+            <div class="field-label">Notes</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder="Test result notes..."></textarea></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. SIGN-OFF -->
+    <div class="section">
+      <div class="section-header">10. Final Sign-Off</div>
+      <div class="section-body">
+        <div class="field-grid cols-4">
+          <div class="field-cell" style="border-bottom:none;">
+            <div class="field-label">Date Completed</div>
+            <div class="field-input"><textarea rows="1" oninput="autoResize(this)" placeholder="DD / MM / YYYY"></textarea></div>
+          </div>
+          <div class="field-cell" style="border-bottom:none;">
+            <div class="field-label">Job Status</div>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="status"><div class="radio-box"></div><span class="radio-label">Complete</span></label>
+              <label class="radio-option"><input type="radio" name="status"><div class="radio-box"></div><span class="radio-label">Awaiting parts</span></label>
+              <label class="radio-option"><input type="radio" name="status"><div class="radio-box"></div><span class="radio-label">Returned unrepaired</span></label>
+            </div>
+          </div>
+          <div class="field-cell" style="border-bottom:none;">
+            <div class="field-label">Multitrack Updated?</div>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="mt"><div class="radio-box"></div><span class="radio-label">Yes</span></label>
+              <label class="radio-option"><input type="radio" name="mt"><div class="radio-box"></div><span class="radio-label">No</span></label>
+            </div>
+          </div>
+          <div class="field-cell" style="border-bottom:none; border-right:none;">
+            <div class="field-label">Digital Copy Filed?</div>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="filed"><div class="radio-box"></div><span class="radio-label">Yes &mdash; saved as PDF</span></label>
+              <label class="radio-option"><input type="radio" name="filed"><div class="radio-box"></div><span class="radio-label">No</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="footer">Guitar Garage NZ Ltd &mdash; Welcome Bay, Tauranga &mdash; Est. July 2015 &mdash; Private &amp; Confidential</div>
+
+</div><!-- /page -->
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  // ── CONFIG ──
+  const CLIENT_ID = '637319161579-encggrahv59ito9rtcpdlltdod3gh8o1.apps.googleusercontent.com';
+  const FOLDER_NAME = 'GGNZ SERVICE RECORDS';
+  const SCOPES = 'https://www.googleapis.com/auth/drive';
+
+  let accessToken = null;
+
+  // ── AUTO-RESIZE TEXTAREAS ──
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  document.querySelectorAll('textarea').forEach(ta => {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  });
+
+  // ── ADD PARTS ROW ──
+  let partsRowCount = 2;
+  function addPartsRow() {
+    const tbody = document.getElementById('partsBody');
+    const n = partsRowCount++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder=""></td>
+      <td><input type="text" placeholder=""></td>
+      <td><input type="text" placeholder="1"></td>
+      <td>
+        <div class="parts-status">
+          <label class="radio-option"><input type="radio" name="ps${n}"><div class="radio-box"></div><span class="radio-label">Stock</span></label>
+          <label class="radio-option"><input type="radio" name="ps${n}"><div class="radio-box"></div><span class="radio-label">Ordered</span></label>
+          <label class="radio-option"><input type="radio" name="ps${n}"><div class="radio-box"></div><span class="radio-label">Fitted</span></label>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // ── DATE ──
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yyyy = today.getFullYear();
+  document.getElementById('dateIn').placeholder = `${dd} / ${mm} / ${yyyy}`;
+
+  // ── CLEAR FORM ──
+  function clearForm() {
+    if (!confirm('Clear all form data?')) return;
+    document.querySelectorAll('textarea').forEach(el => { el.value = ''; autoResize(el); });
+    document.querySelectorAll('input[type="text"]').forEach(el => { if (el.id !== 'tech') el.value = ''; });
+    document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+    const tbody = document.getElementById('partsBody');
+    while (tbody.rows.length > 1) tbody.deleteRow(1);
+    partsRowCount = 2;
+  }
+
+  // ── GOOGLE SIGN IN ──
+  function signInAndSave() {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (response) => {
+        if (response.error) {
+          setStatus('Sign-in failed: ' + response.error, 'error');
+          return;
+        }
+        accessToken = response.access_token;
+        saveToDrive();
+      },
+    });
+    client.requestAccessToken();
+  }
+
+  // ── STATUS MESSAGE ──
+  function setStatus(msg, type = 'info') {
+    const el = document.getElementById('driveStatus');
+    el.textContent = msg;
+    el.style.color = type === 'error' ? '#C62828' : type === 'success' ? '#1B5E20' : '#1565C0';
+    el.style.display = 'block';
+  }
+
+  // ── FIND OR CREATE FOLDER ──
+  async function getOrCreateFolder() {
+    // Search for existing folder
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='" + FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false")}&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const searchData = await searchRes.json();
+
+    if (searchData.files && searchData.files.length > 0) {
+      return searchData.files[0].id;
+    }
+
+    // Create folder if not found
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: FOLDER_NAME,
+        mimeType: 'application/vnd.google-apps.folder',
+      }),
+    });
+    const folder = await createRes.json();
+    return folder.id;
+  }
+
+  // ── COLLECT ALL FORM DATA ──
+  function collectFormData() {
+    const data = {};
+    // Text inputs
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+      if (el.id) data[el.id] = el.value;
+    });
+    // Textareas - use index as key
+    document.querySelectorAll('textarea').forEach((el, i) => {
+      data['ta_' + i] = el.value;
+    });
+    // Checkboxes
+    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
+      data['cb_' + i] = el.checked;
+    });
+    // Radio buttons
+    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
+      data['rb_' + i] = el.checked;
+    });
+    return data;
+  }
+
+  // ── RESTORE FORM DATA ──
+  function restoreFormData(data) {
+    if (!data) return;
+    document.querySelectorAll('input[type="text"]').forEach(el => {
+      if (el.id && data[el.id] !== undefined) el.value = data[el.id];
+    });
+    document.querySelectorAll('textarea').forEach((el, i) => {
+      if (data['ta_' + i] !== undefined) { el.value = data['ta_' + i]; autoResize(el); }
+    });
+    document.querySelectorAll('input[type="checkbox"]').forEach((el, i) => {
+      if (data['cb_' + i] !== undefined) el.checked = data['cb_' + i];
+    });
+    document.querySelectorAll('input[type="radio"]').forEach((el, i) => {
+      if (data['rb_' + i] !== undefined) el.checked = data['rb_' + i];
+    });
+  }
+
+  // ── AUTO SAVE TO LOCALSTORAGE ──
+  function autoSave() {
+    localStorage.setItem('ggnz_draft', JSON.stringify(collectFormData()));
+  }
+
+  // ── LOAD DRAFT ON PAGE LOAD ──
+  window.addEventListener('load', () => {
+    const draft = localStorage.getItem('ggnz_draft');
+    if (draft) {
+      try { restoreFormData(JSON.parse(draft)); } catch(e) {}
+    }
+  });
+
+  // Auto-save every 30 seconds and on any input
+  setInterval(autoSave, 30000);
+  document.addEventListener('input', autoSave);
+  document.addEventListener('change', autoSave);
+
+  // ── SAVE TO DRIVE ──
+  async function saveToDrive() {
+    setStatus('Connecting to Google Drive...', 'info');
+
+    try {
+      const jobNo = document.getElementById('jobNo').value.trim() || 'NOJOBNO';
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      const filename = `${jobNo}_${dateStr}_ServiceSheet.html`;
+
+      setStatus('Finding GGNZ SERVICE RECORDS folder...', 'info');
+      const folderId = await getOrCreateFolder();
+
+      // Build a self-contained HTML file with data embedded as JSON
+      const formData = collectFormData();
+      const dataScript = `<script id="savedData" type="application/json">${JSON.stringify(formData)}<\/script>`;
+
+      // Get page HTML and inject the data + restore script
+      const restoreScript = `
+      <script>
+        window.addEventListener('DOMContentLoaded', function() {
+          var el = document.getElementById('savedData');
+          if (!el) return;
+          var data = JSON.parse(el.textContent);
+          document.querySelectorAll('input[type="text"]').forEach(function(inp) {
+            if (inp.id && data[inp.id] !== undefined) inp.value = data[inp.id];
+          });
+          document.querySelectorAll('textarea').forEach(function(ta, i) {
+            if (data['ta_' + i] !== undefined) { ta.value = data['ta_' + i]; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+          });
+          document.querySelectorAll('input[type="checkbox"]').forEach(function(cb, i) {
+            if (data['cb_' + i] !== undefined) cb.checked = data['cb_' + i];
+          });
+          document.querySelectorAll('input[type="radio"]').forEach(function(rb, i) {
+            if (data['rb_' + i] !== undefined) rb.checked = data['rb_' + i];
+          });
+        });
+      <\/script>`;
+
+      let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      htmlContent = htmlContent.replace('</body>', dataScript + restoreScript + '</body>');
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+
+      setStatus('Uploading to Drive...', 'info');
+
+      // Upload file
+      const metadata = {
+        name: filename,
+        parents: [folderId],
+        mimeType: 'text/html',
+      };
+
+      const formData = new FormData();
+      formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      formData.append('file', blob);
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadRes.json();
+
+      if (uploadData.id) {
+        setStatus(`✓ Saved as "${filename}" in GGNZ SERVICE RECORDS`, 'success');
+      } else {
+        setStatus('Upload failed — check console for details', 'error');
+        console.error(uploadData);
+      }
+
+    } catch (err) {
+      setStatus('Error: ' + err.message, 'error');
+      console.error(err);
+    }
+  }
+
+  // ── MAIN SAVE BUTTON HANDLER ──
+  function handleSaveToDrive() {
+    if (accessToken) {
+      saveToDrive();
+    } else {
+      signInAndSave();
+    }
+  }
+</script>
+</body>
+</html>
