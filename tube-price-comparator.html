@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Garage NZ — Tube Price Comparator v1.7</title>
+<title>Guitar Garage NZ — Tube Price Comparator v1.8</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -134,7 +134,7 @@
 
   <div class="header">
     <h1>Tube Price Comparator</h1>
-    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.7</span></p>
+    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.8</span></p>
     <div class="sync-status">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label"></span>
@@ -286,15 +286,44 @@ function updateRate(c,v){rates[c]=parseFloat(v)||1;renderTable();}
 
 async function fetchRates(){
   const dot=document.getElementById('rdot'),ts=document.getElementById('rts');
-  try{
-    const res=await fetch('https://api.frankfurter.dev/v2/latest?from=NZD&to=EUR,AUD,GBP,USD');
-    if(!res.ok)throw 0;
-    const d=await res.json();
-    for(const[c,r]of Object.entries(d.rates)){rates[c]=1/r;}
-    ['EUR','AUD','GBP','USD'].forEach(c=>{const el=document.getElementById('r-'+c);if(el)el.value=rates[c].toFixed(4);});
-    dot.className='dot live';ts.textContent='live \u2014 '+d.date;
-    renderTable();
-  }catch(e){dot.className='dot err';ts.textContent='fetch failed \u2014 using saved rates';}
+  // Try multiple APIs in order
+  const apis=[
+    async()=>{
+      // fawazahmed0 CDN - no key, no rate limit
+      const res=await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/nzd.json');
+      if(!res.ok)throw new Error('cdn failed');
+      const d=await res.json();
+      const r=d.nzd;
+      rates.EUR=1/r.eur; rates.AUD=1/r.aud; rates.GBP=1/r.gbp; rates.USD=1/r.usd;
+      return d.date;
+    },
+    async()=>{
+      // Frankfurter v2
+      const res=await fetch('https://api.frankfurter.dev/v2/rates?base=NZD&quotes=EUR,AUD,GBP,USD');
+      if(!res.ok)throw new Error('frankfurter failed');
+      const d=await res.json();
+      for(const[c,r]of Object.entries(d.rates)){rates[c]=1/r;}
+      return d.date||'today';
+    },
+    async()=>{
+      // Frankfurter legacy
+      const res=await fetch('https://api.frankfurter.app/latest?from=NZD&to=EUR,AUD,GBP,USD');
+      if(!res.ok)throw new Error('frankfurter legacy failed');
+      const d=await res.json();
+      for(const[c,r]of Object.entries(d.rates)){rates[c]=1/r;}
+      return d.date;
+    }
+  ];
+  for(const api of apis){
+    try{
+      const date=await api();
+      ['EUR','AUD','GBP','USD'].forEach(c=>{const el=document.getElementById('r-'+c);if(el)el.value=rates[c].toFixed(4);});
+      dot.className='dot live';ts.textContent='live \u2014 '+date;
+      renderTable();
+      return;
+    }catch(e){continue;}
+  }
+  dot.className='dot err';ts.textContent='fetch failed \u2014 using saved rates';
 }
 
 // --- Render ---
