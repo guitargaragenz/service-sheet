@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Garage NZ — Tube Price Comparator v1.5</title>
+<title>Guitar Garage NZ — Tube Price Comparator v1.6</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -134,7 +134,7 @@
 
   <div class="header">
     <h1>Tube Price Comparator</h1>
-    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.5</span></p>
+    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.6</span></p>
     <div class="sync-status">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label"></span>
@@ -145,10 +145,10 @@
     <div>
       <strong>Cloud sync settings</strong>
       Free cross-device sync via <a href="https://jsonbin.io" target="_blank">jsonbin.io</a>.
-      Free cross-device sync via jsonbin.io. Create a free account, make a bin with {"init":true}, copy the master key and bin ID, then paste below. You can update these any time.
+      Cross-device sync via GitHub Gist. Create a secret gist at gist.github.com with filename tube-comparator.json and content {"init":true}. Generate a personal access token with gist scope at github.com/settings/tokens. Paste both below.
       <div class="setup-fields">
-        <input class="setup-input" id="cfg-key" placeholder="API Key (X-Access-Key)" type="password">
-        <input class="setup-input" id="cfg-bin" placeholder="Bin ID">
+        <input class="setup-input" id="cfg-key" placeholder="GitHub Personal Access Token" type="password">
+        <input class="setup-input" id="cfg-bin" placeholder="Gist ID">
         <button class="setup-save" onclick="saveConfig()">Save &amp; sync</button>
       </div>
     </div>
@@ -230,14 +230,19 @@ async function syncFromCloud(){
   if(!hasCloud()){setSyncStatus('','');return;}
   setSyncStatus('saving','syncing...');
   try{
-    const res=await fetch(`https://api.jsonbin.io/v3/b/${CFG.bin}/latest`,{headers:{'X-Access-Key':CFG.key,'X-Bin-Meta':'false'}});
-    if(!res.ok)throw 0;
-    const d=await res.json();
+    const res=await fetch(`https://api.github.com/gists/${CFG.bin}`,{
+      headers:{'Authorization':'token '+CFG.key,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!res.ok)throw new Error(res.status);
+    const gist=await res.json();
+    const raw=gist.files['tube-comparator.json'];
+    if(!raw)throw new Error('file not found in gist');
+    const d=JSON.parse(raw.content);
     if(d&&Array.isArray(d.sups)){sups=[sups[0],...d.sups.map(s=>({...s,locked:false}))];nid=d.sups.length+1;}
     if(d&&d.spPrices)sups[0].prices={...SP_DEF,...d.spPrices};
     if(d&&d.spQtys)sups[0].qtys={...mkDefQtys(),...d.spQtys};
     renderTable();setSyncStatus('ok','synced');
-  }catch(e){setSyncStatus('err','sync error');}
+  }catch(e){setSyncStatus('err','sync error: '+e.message);}
 }
 
 function scheduleSave(){
@@ -248,13 +253,15 @@ function scheduleSave(){
 async function pushToCloud(){
   if(!hasCloud())return;
   try{
-    const res=await fetch(`https://api.jsonbin.io/v3/b/${CFG.bin}`,{
-      method:'PUT',headers:{'Content-Type':'application/json','X-Access-Key':CFG.key},
-      body:JSON.stringify({sups:sups.filter(s=>!s.locked),spPrices:sups[0].prices,spQtys:sups[0].qtys})
+    const payload={sups:sups.filter(s=>!s.locked),spPrices:sups[0].prices,spQtys:sups[0].qtys};
+    const res=await fetch(`https://api.github.com/gists/${CFG.bin}`,{
+      method:'PATCH',
+      headers:{'Authorization':'token '+CFG.key,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      body:JSON.stringify({files:{'tube-comparator.json':{content:JSON.stringify(payload)}}})
     });
-    if(!res.ok)throw 0;
+    if(!res.ok)throw new Error(res.status);
     setSyncStatus('ok','saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
-  }catch(e){setSyncStatus('err','save failed');}
+  }catch(e){setSyncStatus('err','save failed: '+e.message);}
 }
 
 function localSave(){
