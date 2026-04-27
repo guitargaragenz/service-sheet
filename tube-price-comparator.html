@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Garage NZ — Tube Price Comparator v1.6</title>
+<title>Guitar Garage NZ — Tube Price Comparator v1.7</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -134,7 +134,7 @@
 
   <div class="header">
     <h1>Tube Price Comparator</h1>
-    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.6</span></p>
+    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.7</span></p>
     <div class="sync-status">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label"></span>
@@ -287,7 +287,7 @@ function updateRate(c,v){rates[c]=parseFloat(v)||1;renderTable();}
 async function fetchRates(){
   const dot=document.getElementById('rdot'),ts=document.getElementById('rts');
   try{
-    const res=await fetch('https://api.frankfurter.app/latest?from=NZD&to=EUR,AUD,GBP,USD');
+    const res=await fetch('https://api.frankfurter.dev/v2/latest?from=NZD&to=EUR,AUD,GBP,USD');
     if(!res.ok)throw 0;
     const d=await res.json();
     for(const[c,r]of Object.entries(d.rates)){rates[c]=1/r;}
