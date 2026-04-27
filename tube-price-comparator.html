@@ -3,139 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Garage NZ — Tube Price Comparator</title>
+<title>Guitar Garage NZ — Tube Price Comparator v1.5</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f8f7f4;
-    --surface: #ffffff;
-    --surface2: #f1efe9;
-    --border: #e0ddd5;
-    --border2: #ccc9bf;
-    --text: #1a1917;
-    --text2: #6b6860;
-    --text3: #9b9890;
-    --green-bg: #f0fdf4;
-    --green: #16a34a;
-    --green-border: #bbf7d0;
-    --red: #dc2626;
-    --blue: #2563eb;
-    --mono: 'JetBrains Mono', 'Courier New', monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg:#f8f7f4; --surface:#ffffff; --surface2:#f1efe9; --border:#e0ddd5;
+    --border2:#ccc9bf; --text:#1a1917; --text2:#6b6860; --text3:#9b9890;
+    --green-bg:#f0fdf4; --green:#16a34a; --green-border:#bbf7d0;
+    --red:#dc2626; --amber:#d97706;
+    --mono:'JetBrains Mono','Courier New',monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141412;
-      --surface: #1e1d1b;
-      --surface2: #28261f;
-      --border: #3a3830;
-      --border2: #4a4840;
-      --text: #f0ede6;
-      --text2: #9b9890;
-      --text3: #6b6860;
-      --green-bg: #052e16;
-      --green: #4ade80;
-      --green-border: #166534;
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#141412; --surface:#1e1d1b; --surface2:#28261f; --border:#3a3830;
+      --border2:#4a4840; --text:#f0ede6; --text2:#9b9890; --text3:#6b6860;
+      --green-bg:#052e16; --green:#4ade80; --green-border:#166534;
     }
   }
-  body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
-  .container { max-width: 100%; padding: 1.5rem 1.25rem 4rem; }
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+  .container{max-width:100%;padding:1.5rem 1.25rem 4rem;}
 
-  /* Header */
-  .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 1.25rem; }
-  .header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-  .header p { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .setup-banner{display:none;align-items:flex-start;gap:12px;padding:12px 16px;
+    background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;margin-bottom:1.25rem;font-size:12px;color:#92400e;}
+  .setup-banner.show{display:flex;}
+  .setup-banner strong{display:block;font-size:13px;margin-bottom:4px;color:#78350f;}
+  .setup-banner a{color:var(--amber);font-weight:600;}
+  .setup-fields{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .setup-input{font-size:12px;font-family:var(--mono);border:1px solid #fcd34d;border-radius:4px;
+    padding:4px 8px;background:#fffdf5;outline:none;width:220px;color:#1a1917;}
+  .setup-save{font-size:12px;padding:4px 12px;border-radius:4px;border:1px solid #d97706;
+    background:#d97706;color:#fff;cursor:pointer;font-weight:600;}
 
-  /* Rates bar */
-  .rates-bar {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-    padding: 10px 14px; background: var(--surface2);
-    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.25rem;
-  }
-  .rates-label { font-size: 11px; font-weight: 600; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; }
-  .rate-pill {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--surface); border: 1px solid var(--border2); border-radius: 5px;
-    padding: 3px 9px; font-family: var(--mono); font-size: 12px;
-  }
-  .rate-pill .ccy { color: var(--text2); font-size: 10px; font-weight: 700; }
-  .rate-pill .eq { color: var(--text3); font-size: 10px; margin: 0 2px; }
-  .rate-pill input {
-    width: 54px; text-align: right; font-family: var(--mono); font-size: 12px;
-    font-weight: 600; color: var(--text); border: none; background: transparent; outline: none; padding: 0;
-  }
-  .rate-pill .unit { color: var(--text3); font-size: 10px; }
-  .rates-meta { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
-  .dot.live { background: #22c55e; }
-  .dot.err { background: var(--red); }
+  .header{display:flex;align-items:baseline;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap;}
+  .header h1{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+  .header p{font-size:12px;color:var(--text2);font-family:var(--mono);}
+  .sync-status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text2);}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+  .sync-dot.ok{background:#22c55e;} .sync-dot.err{background:var(--red);} .sync-dot.saving{background:var(--amber);}
 
-  /* Table wrapper */
-  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
-  table { border-collapse: collapse; width: 100%; }
+  .rates-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;
+    background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:1.25rem;}
+  .rates-label{font-size:11px;font-weight:600;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;}
+  .rate-pill{display:inline-flex;align-items:center;gap:4px;background:var(--surface);
+    border:1px solid var(--border2);border-radius:5px;padding:3px 9px;font-family:var(--mono);font-size:12px;}
+  .rate-pill .ccy{color:var(--text2);font-size:10px;font-weight:700;}
+  .rate-pill .eq{color:var(--text3);font-size:10px;margin:0 2px;}
+  .rate-pill input{width:54px;text-align:right;font-family:var(--mono);font-size:12px;font-weight:600;
+    color:var(--text);border:none;background:transparent;outline:none;padding:0;}
+  .rate-pill .unit{color:var(--text3);font-size:10px;}
+  .rates-meta{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text2);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+  .dot.live{background:#22c55e;} .dot.err{background:var(--red);}
 
-  /* Head */
-  thead th {
-    padding: 10px 13px; text-align: left; font-size: 11px; font-weight: 600;
-    color: var(--text2); border-bottom: 1px solid var(--border);
-    white-space: nowrap; vertical-align: bottom; background: var(--surface2);
-  }
-  thead th:first-child { border-radius: 10px 0 0 0; }
-  thead th.sup-th { text-align: center; min-width: 130px; position: relative; padding: 8px 24px 8px 12px; }
-  .sup-name { font-size: 12px; font-weight: 600; color: var(--text); background: transparent; border: none; border-bottom: 1px dashed var(--border2); text-align: center; width: 100%; outline: none; padding: 2px 4px; margin-bottom: 4px; display: block; font-family: var(--sans); }
-  .sup-name::placeholder { color: var(--text3); font-weight: 400; }
-  .sup-ccy { font-size: 11px; font-family: var(--mono); color: var(--text2); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 5px; outline: none; cursor: pointer; }
-  .del-btn { position: absolute; top: 4px; right: 6px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; line-height: 1; opacity: .5; padding: 0; }
-  .del-btn:hover { opacity: 1; color: var(--red); }
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface);}
+  table{border-collapse:collapse;width:100%;}
+
+  /* Fixed left columns */
+  thead th{padding:10px 13px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);
+    border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:bottom;background:var(--surface2);}
+
+  /* Supplier group header spans two columns (qty + price) */
+  th.sup-group{text-align:center;position:relative;padding:8px 28px 8px 12px;background:var(--surface2);
+    border-left:2px solid var(--border);}
+  .sup-name{font-size:12px;font-weight:700;color:var(--text);background:transparent;border:none;
+    border-bottom:1px dashed var(--border2);text-align:center;width:100%;outline:none;
+    padding:2px 4px;margin-bottom:4px;display:block;font-family:var(--sans);}
+  .sup-name::placeholder{color:var(--text3);font-weight:400;}
+  .sup-ccy{font-size:11px;font-family:var(--mono);color:var(--text2);background:var(--bg);
+    border:1px solid var(--border);border-radius:3px;padding:2px 5px;outline:none;cursor:pointer;}
+  .del-btn{position:absolute;top:4px;right:6px;background:none;border:none;cursor:pointer;
+    color:var(--text3);font-size:18px;line-height:1;opacity:.4;padding:0;}
+  .del-btn:hover{opacity:1;color:var(--red);}
+
+  /* Sub-headers for qty / price inside each supplier group */
+  th.sub-qty{font-size:10px;font-weight:600;color:var(--text3);text-align:center;
+    width:54px;min-width:54px;border-left:2px solid var(--border);padding:4px 6px;
+    text-transform:uppercase;letter-spacing:.04em;}
+  th.sub-price{font-size:10px;font-weight:600;color:var(--text3);text-align:center;
+    min-width:110px;padding:4px 10px;text-transform:uppercase;letter-spacing:.04em;}
 
   /* Body */
-  tbody tr { transition: background .1s; }
-  tbody tr:hover td { background: var(--surface2); }
-  td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  td.col-type { font-family: var(--mono); font-size: 13px; font-weight: 700; white-space: nowrap; min-width: 65px; }
-  td.col-brand { font-size: 12px; color: var(--text2); white-space: nowrap; }
-  td.col-qty { font-size: 11px; font-family: var(--mono); color: var(--text3); white-space: nowrap; }
-  td.price-cell { text-align: center; vertical-align: middle; }
-  .price-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .price-input {
-    font-family: var(--mono); font-size: 13px; font-weight: 600;
-    border: none; background: transparent; text-align: center;
-    color: var(--text); outline: none; width: 90px; padding: 2px 4px; border-radius: 4px;
-  }
-  .price-input:focus { background: var(--surface2); }
-  .price-input::placeholder { color: var(--border2); font-weight: 400; font-size: 18px; }
-  .nzd-equiv { font-size: 10px; font-family: var(--mono); color: var(--text2); }
-  td.cheap { background: var(--green-bg) !important; outline: 1px solid var(--green-border); }
-  td.cheap .price-input { color: var(--green) !important; }
-  td.cheap .nzd-equiv { color: var(--green); opacity: .8; }
+  tbody tr:hover td{background:var(--surface2);}
+  td{padding:8px 13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.col-type{font-family:var(--mono);font-size:13px;font-weight:700;white-space:nowrap;min-width:65px;}
+  td.col-brand{font-size:12px;color:var(--text2);white-space:nowrap;}
 
-  /* Foot */
-  tfoot td {
-    padding: 10px 13px; border-top: 2px solid var(--border);
-    font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em;
-  }
-  .total-val { font-family: var(--mono); font-size: 14px; font-weight: 700; text-align: center; color: var(--text); }
+  /* Qty cell */
+  td.qty-cell{text-align:center;vertical-align:middle;padding:6px 6px;border-left:2px solid var(--border);}
+  .qty-input{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text2);
+    border:1px solid var(--border);border-radius:4px;background:var(--surface2);
+    text-align:center;width:44px;padding:3px 4px;outline:none;}
+  .qty-input:focus{border-color:var(--border2);background:var(--surface);color:var(--text);}
 
-  /* Add supplier */
-  .add-wrap { margin-top: 1rem; }
-  .add-btn {
-    padding: 8px 20px; font-size: 12px; font-weight: 500; cursor: pointer;
-    border: 1px dashed var(--border2); border-radius: 8px;
-    background: transparent; color: var(--text2); font-family: var(--sans);
-    transition: all .15s;
-  }
-  .add-btn:hover { border-color: var(--border); color: var(--text); background: var(--surface); }
+  /* Price cell */
+  td.price-cell{text-align:center;vertical-align:middle;padding:6px 10px;}
+  .price-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .price-input{font-family:var(--mono);font-size:13px;font-weight:600;border:none;background:transparent;
+    text-align:center;color:var(--text);outline:none;width:90px;padding:2px 4px;border-radius:4px;}
+  .price-input:focus{background:var(--surface2);}
+  .price-input::placeholder{color:var(--border2);font-weight:400;font-size:20px;}
+  .nzd-equiv{font-size:10px;font-family:var(--mono);color:var(--text2);}
 
-  /* Footer note */
-  .footnote { margin-top: 1.5rem; font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  /* Cheapest highlight applies to BOTH qty and price cells via shared row class */
+  td.cheap-qty{background:var(--green-bg)!important;outline:1px solid var(--green-border);}
+  td.cheap-qty .qty-input{border-color:var(--green-border);}
+  td.cheap-price{background:var(--green-bg)!important;outline:1px solid var(--green-border);}
+  td.cheap-price .price-input{color:var(--green)!important;}
+  td.cheap-price .nzd-equiv{color:var(--green);opacity:.8;}
+
+  /* Footer */
+  tfoot td{padding:10px 13px;border-top:2px solid var(--border);font-size:11px;font-weight:600;
+    color:var(--text2);text-transform:uppercase;letter-spacing:.04em;}
+  td.total-qty{border-left:2px solid var(--border);}
+  .total-val{font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;color:var(--text);}
+
+  .controls{display:flex;align-items:center;gap:10px;margin-top:1rem;flex-wrap:wrap;}
+  .add-btn{padding:8px 20px;font-size:12px;font-weight:500;cursor:pointer;border:1px dashed var(--border2);
+    border-radius:8px;background:transparent;color:var(--text2);font-family:var(--sans);}
+  .add-btn:hover{border-color:var(--border);color:var(--text);background:var(--surface);}
+  .cfg-btn{padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);
+    border-radius:8px;background:transparent;color:var(--text2);font-family:var(--sans);}
+  .cfg-btn:hover{background:var(--surface);}
+  .footnote{margin-top:1.5rem;font-size:11px;color:var(--text3);font-family:var(--mono);}
 </style>
 </head>
 <body>
 <div class="container">
+
   <div class="header">
     <h1>Tube Price Comparator</h1>
-    <p>Guitar Garage NZ</p>
+    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.5</span></p>
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label"></span>
+    </div>
+  </div>
+
+  <div class="setup-banner" id="setup-banner">
+    <div>
+      <strong>Cloud sync settings</strong>
+      Free cross-device sync via <a href="https://jsonbin.io" target="_blank">jsonbin.io</a>.
+      Free cross-device sync via jsonbin.io. Create a free account, make a bin with {"init":true}, copy the master key and bin ID, then paste below. You can update these any time.
+      <div class="setup-fields">
+        <input class="setup-input" id="cfg-key" placeholder="API Key (X-Access-Key)" type="password">
+        <input class="setup-input" id="cfg-bin" placeholder="Bin ID">
+        <button class="setup-save" onclick="saveConfig()">Save &amp; sync</button>
+      </div>
+    </div>
   </div>
 
   <div class="rates-bar">
@@ -144,7 +160,7 @@
     <div class="rate-pill"><span class="ccy">AUD</span><span class="eq">=</span><input id="r-AUD" type="number" step="0.0001" value="1.1600" onchange="updateRate('AUD',this.value)"><span class="unit">NZD</span></div>
     <div class="rate-pill"><span class="ccy">GBP</span><span class="eq">=</span><input id="r-GBP" type="number" step="0.0001" value="2.3400" onchange="updateRate('GBP',this.value)"><span class="unit">NZD</span></div>
     <div class="rate-pill"><span class="ccy">USD</span><span class="eq">=</span><input id="r-USD" type="number" step="0.0001" value="1.7300" onchange="updateRate('USD',this.value)"><span class="unit">NZD</span></div>
-    <div class="rates-meta"><div class="dot" id="sdot"></div><span id="rts">fetching live rates...</span></div>
+    <div class="rates-meta"><div class="dot" id="rdot"></div><span id="rts">fetching...</span></div>
   </div>
 
   <div class="table-wrap">
@@ -155,180 +171,245 @@
     </table>
   </div>
 
-  <div class="add-wrap">
+  <div class="controls">
     <button class="add-btn" onclick="addSup()">+ Add supplier</button>
+    <button class="cfg-btn" onclick="toggleSetup()">&#9881; Cloud sync setup#9881; Sync settings#9881; Sync settings</button>
   </div>
 
-  <p class="footnote">Rates fetched live from api.frankfurter.app on page load. Click any rate to edit manually. Green = cheapest NZD per line item. All prices ex-GST.</p>
+  <p class="footnote">Rates fetched live from api.frankfurter.app (ECB) on every page load. Green = cheapest NZD total per line. All prices ex-GST.</p>
 </div>
 
 <script>
-const TUBES = [
-  {id:0, type:'EL34',  qty:'matched pair', brand:'Svetlana'},
-  {id:1, type:'EL84',  qty:'quartet',      brand:'Electro-Harmonix'},
-  {id:2, type:'EL84',  qty:'quartet',      brand:'Sovtek'},
-  {id:3, type:'EL84',  qty:'quartet',      brand:'JJ'},
-  {id:4, type:'EF86',  qty:'x1',           brand:'Electro-Harmonix'},
-  {id:5, type:'GZ34',  qty:'x1',           brand:'Sovtek'},
-  {id:6, type:'GZ34',  qty:'x1',           brand:'Tung-Sol'},
-  {id:7, type:'6V6',   qty:'matched pair', brand:'Electro-Harmonix'},
-  {id:8, type:'6V6',   qty:'matched pair', brand:'Tung-Sol'},
-  {id:9, type:'12AX7', qty:'x4 (each)',    brand:'Electro-Harmonix'},
-  {id:10,type:'12AX7', qty:'x4 (each)',    brand:'Svetlana'},
-  {id:11,type:'12AX7', qty:'x4 (each)',    brand:'Tung-Sol'}
+const TUBES=[
+  {id:0, type:'EL34',  brand:'Svetlana',         defQty:2,  qtyLabel:'pair'},
+  {id:1, type:'EL84',  brand:'Electro-Harmonix',  defQty:4,  qtyLabel:'quartet'},
+  {id:2, type:'EL84',  brand:'Sovtek',            defQty:4,  qtyLabel:'quartet'},
+  {id:3, type:'EL84',  brand:'JJ',                defQty:4,  qtyLabel:'quartet'},
+  {id:4, type:'EF86',  brand:'Electro-Harmonix',  defQty:1,  qtyLabel:'x1'},
+  {id:5, type:'GZ34',  brand:'Sovtek',            defQty:1,  qtyLabel:'x1'},
+  {id:6, type:'GZ34',  brand:'Tung-Sol',          defQty:1,  qtyLabel:'x1'},
+  {id:7, type:'6V6',   brand:'Electro-Harmonix',  defQty:2,  qtyLabel:'pair'},
+  {id:8, type:'6V6',   brand:'Tung-Sol',          defQty:2,  qtyLabel:'pair'},
+  {id:9, type:'12AX7', brand:'Electro-Harmonix',  defQty:4,  qtyLabel:'x4'},
+  {id:10,type:'12AX7', brand:'Svetlana',          defQty:4,  qtyLabel:'x4'},
+  {id:11,type:'12AX7', brand:'Tung-Sol',          defQty:4,  qtyLabel:'x4'}
 ];
 
-const SP_DEF = {0:156.52,1:222.61,2:194.09,3:160.00,4:33.48,5:68.87,6:82.78,7:138.43,8:166.26,9:54.96,10:61.91,11:66.09};
-const CCYS = ['NZD','AUD','USD','EUR','GBP'];
+const SP_DEF={0:156.52,1:222.61,2:194.09,3:160.00,4:33.48,5:68.87,6:82.78,7:138.43,8:166.26,9:54.96,10:61.91,11:66.09};
+const mkDefQtys=()=>{const q={};TUBES.forEach(t=>{q[t.id]=t.defQty;});return q;};
 
-let rates = {NZD:1, EUR:2.03, AUD:1.16, GBP:2.34, USD:1.73};
-let sups = [{id:'sp', name:'South Pac', ccy:'NZD', locked:true, prices:{...SP_DEF}}];
-let nid = 1;
+const CCYS=['NZD','AUD','USD','EUR','GBP'];
+let rates={NZD:1,EUR:2.03,AUD:1.16,GBP:2.34,USD:1.73};
+let sups=[{id:'sp',name:'South Pac',ccy:'NZD',locked:true,prices:{...SP_DEF},qtys:mkDefQtys()}];
+let nid=1;
+let saveTimer=null;
 
-// --- Storage (localStorage) ---
-function save() {
-  try {
-    localStorage.setItem('ggnz-sups', JSON.stringify(sups.filter(s => !s.locked)));
-    localStorage.setItem('ggnz-sp', JSON.stringify(sups[0].prices));
-  } catch(e) {}
+// --- Config ---
+let CFG={key:'',bin:''};
+function loadConfig(){try{const c=JSON.parse(localStorage.getItem('ggnz-cfg')||'{}');CFG.key=c.key||'';CFG.bin=c.bin||'';}catch(e){}}
+function saveConfig(){
+  CFG.key=document.getElementById('cfg-key').value.trim();
+  CFG.bin=document.getElementById('cfg-bin').value.trim();
+  localStorage.setItem('ggnz-cfg',JSON.stringify(CFG));
+  document.getElementById('setup-banner').classList.remove('show');
+  syncFromCloud();
+}
+function toggleSetup(){
+  const b=document.getElementById('setup-banner');
+  if(b.classList.contains('show')){b.classList.remove('show');}
+  else{b.classList.add('show');document.getElementById('cfg-key').value=CFG.key;document.getElementById('cfg-bin').value=CFG.bin;}
+}
+function hasCloud(){return !!(CFG.key&&CFG.bin);}
+
+function setSyncStatus(state,label){
+  document.getElementById('sync-dot').className='sync-dot '+state;
+  document.getElementById('sync-label').textContent=label;
 }
 
-function loadState() {
-  try {
-    const extra = JSON.parse(localStorage.getItem('ggnz-sups') || 'null');
-    if (extra && Array.isArray(extra)) { sups = [sups[0], ...extra]; nid = extra.length + 1; }
-    const sp = JSON.parse(localStorage.getItem('ggnz-sp') || 'null');
-    if (sp) sups[0].prices = {...SP_DEF, ...sp};
-  } catch(e) {}
+async function syncFromCloud(){
+  if(!hasCloud()){setSyncStatus('','');return;}
+  setSyncStatus('saving','syncing...');
+  try{
+    const res=await fetch(`https://api.jsonbin.io/v3/b/${CFG.bin}/latest`,{headers:{'X-Access-Key':CFG.key,'X-Bin-Meta':'false'}});
+    if(!res.ok)throw 0;
+    const d=await res.json();
+    if(d&&Array.isArray(d.sups)){sups=[sups[0],...d.sups.map(s=>({...s,locked:false}))];nid=d.sups.length+1;}
+    if(d&&d.spPrices)sups[0].prices={...SP_DEF,...d.spPrices};
+    if(d&&d.spQtys)sups[0].qtys={...mkDefQtys(),...d.spQtys};
+    renderTable();setSyncStatus('ok','synced');
+  }catch(e){setSyncStatus('err','sync error');}
 }
 
-// --- Exchange rates ---
-function toNZD(p, c) { return p * (rates[c] || 1); }
-function fmt(n) { return '$' + n.toFixed(2); }
-function updateRate(c, v) { rates[c] = parseFloat(v) || 1; renderTable(); }
-
-async function fetchRates() {
-  const dot = document.getElementById('sdot');
-  const ts  = document.getElementById('rts');
-  try {
-    const res = await fetch('https://api.frankfurter.app/latest?from=NZD&to=EUR,AUD,GBP,USD');
-    if (!res.ok) throw new Error(res.status);
-    const d = await res.json();
-    // d.rates are NZD→foreign; invert for foreign→NZD
-    for (const [c, r] of Object.entries(d.rates)) { rates[c] = 1 / r; }
-    ['EUR','AUD','GBP','USD'].forEach(c => {
-      const el = document.getElementById('r-' + c);
-      if (el) el.value = rates[c].toFixed(4);
+function scheduleSave(){
+  if(!hasCloud())return;
+  clearTimeout(saveTimer);setSyncStatus('saving','saving...');
+  saveTimer=setTimeout(pushToCloud,1200);
+}
+async function pushToCloud(){
+  if(!hasCloud())return;
+  try{
+    const res=await fetch(`https://api.jsonbin.io/v3/b/${CFG.bin}`,{
+      method:'PUT',headers:{'Content-Type':'application/json','X-Access-Key':CFG.key},
+      body:JSON.stringify({sups:sups.filter(s=>!s.locked),spPrices:sups[0].prices,spQtys:sups[0].qtys})
     });
-    dot.className = 'dot live';
-    ts.textContent = 'live  —  ' + d.date;
+    if(!res.ok)throw 0;
+    setSyncStatus('ok','saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSyncStatus('err','save failed');}
+}
+
+function localSave(){
+  try{
+    localStorage.setItem('ggnz-sups',JSON.stringify(sups.filter(s=>!s.locked)));
+    localStorage.setItem('ggnz-sp',JSON.stringify({prices:sups[0].prices,qtys:sups[0].qtys}));
+  }catch(e){}
+}
+function localLoad(){
+  try{
+    const ex=JSON.parse(localStorage.getItem('ggnz-sups')||'null');
+    if(ex&&Array.isArray(ex)){sups=[sups[0],...ex];nid=ex.length+1;}
+    const sp=JSON.parse(localStorage.getItem('ggnz-sp')||'null');
+    if(sp){if(sp.prices)sups[0].prices={...SP_DEF,...sp.prices};if(sp.qtys)sups[0].qtys={...mkDefQtys(),...sp.qtys};}
+  }catch(e){}
+}
+function save(){localSave();scheduleSave();}
+
+function toNZD(p,c){return p*(rates[c]||1);}
+function fmt(n){return'$'+n.toFixed(2);}
+function updateRate(c,v){rates[c]=parseFloat(v)||1;renderTable();}
+
+async function fetchRates(){
+  const dot=document.getElementById('rdot'),ts=document.getElementById('rts');
+  try{
+    const res=await fetch('https://api.frankfurter.app/latest?from=NZD&to=EUR,AUD,GBP,USD');
+    if(!res.ok)throw 0;
+    const d=await res.json();
+    for(const[c,r]of Object.entries(d.rates)){rates[c]=1/r;}
+    ['EUR','AUD','GBP','USD'].forEach(c=>{const el=document.getElementById('r-'+c);if(el)el.value=rates[c].toFixed(4);});
+    dot.className='dot live';ts.textContent='live \u2014 '+d.date;
     renderTable();
-  } catch(e) {
-    dot.className = 'dot err';
-    ts.textContent = 'live fetch failed — using saved rates';
-  }
+  }catch(e){dot.className='dot err';ts.textContent='fetch failed \u2014 using saved rates';}
 }
 
 // --- Render ---
-function renderHead() {
-  let h = '<tr><th>Tube</th><th>Brand</th><th>Qty</th>';
-  sups.forEach(s => {
-    h += `<th class="sup-th">`;
-    if (s.locked) {
-      h += `<div style="font-size:13px;font-weight:700;margin-bottom:3px">${s.name}</div>`;
-      h += `<div style="font-size:10px;font-weight:400;color:var(--text3)">NZD ex-GST</div>`;
-    } else {
-      h += `<button class="del-btn" onclick="delSup('${s.id}')" title="Remove supplier">&#x2715;</button>`;
-      h += `<input class="sup-name" placeholder="Supplier name" value="${escHtml(s.name)}" onchange="supName('${s.id}',this.value)">`;
-      h += `<select class="sup-ccy" onchange="supCcy('${s.id}',this.value)">`;
-      CCYS.forEach(c => { h += `<option value="${c}"${c===s.ccy?' selected':''}>${c}</option>`; });
-      h += `</select>`;
+function renderHead(){
+  // Row 1: fixed cols + supplier group headers spanning 2 cols each
+  let h='<tr>';
+  h+=`<th rowspan="2">Tube</th><th rowspan="2">Brand</th>`;
+  sups.forEach(s=>{
+    if(s.locked){
+      h+=`<th class="sup-group" colspan="2">`;
+      h+=`<div style="font-size:13px;font-weight:700;margin-bottom:2px">${esc(s.name)}</div>`;
+      h+=`<div style="font-size:10px;font-weight:400;color:var(--text3)">${s.ccy} ex-GST</div>`;
+      h+=`</th>`;
+    }else{
+      h+=`<th class="sup-group" colspan="2">`;
+      h+=`<button class="del-btn" onclick="delSup('${s.id}')" title="Remove">&#x2715;</button>`;
+      h+=`<input class="sup-name" placeholder="Supplier name" value="${esc(s.name)}" onchange="supName('${s.id}',this.value)">`;
+      h+=`<select class="sup-ccy" onchange="supCcy('${s.id}',this.value)">`;
+      CCYS.forEach(c=>{h+=`<option value="${c}"${c===s.ccy?' selected':''}>${c}</option>`;});
+      h+=`</select></th>`;
     }
-    h += `</th>`;
   });
-  h += '</tr>';
-  document.getElementById('thead').innerHTML = h;
+  h+='</tr>';
+  // Row 2: sub-headers
+  h+='<tr>';
+  sups.forEach(()=>{
+    h+=`<th class="sub-qty">Qty</th><th class="sub-price">Price</th>`;
+  });
+  h+='</tr>';
+  document.getElementById('thead').innerHTML=h;
 }
 
-function renderBody() {
-  let h = '';
-  TUBES.forEach(t => {
-    h += `<tr><td class="col-type">${t.type}</td><td class="col-brand">${t.brand}</td><td class="col-qty">${t.qty}</td>`;
-    sups.forEach(s => {
-      const p   = s.prices[t.id];
-      const nzd = (p != null) ? toNZD(p, s.ccy) : null;
-      h += `<td class="price-cell" data-tube="${t.id}" data-sup="${s.id}"><div class="price-wrap">`;
-      h += `<input class="price-input" type="number" step="0.01" ${p != null ? `value="${p}"` : ''} placeholder="—" onchange="upPrice('${s.id}',${t.id},this.value)">`;
-      if (p != null && s.ccy !== 'NZD') {
-        h += `<span class="nzd-equiv">${fmt(nzd)} NZD</span>`;
-      }
-      h += `</div></td>`;
+function renderBody(){
+  let h='';
+  TUBES.forEach(t=>{
+    h+=`<tr>`;
+    h+=`<td class="col-type">${t.type}</td>`;
+    h+=`<td class="col-brand">${t.brand}</td>`;
+    sups.forEach(s=>{
+      const p=s.prices[t.id];
+      const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
+      const nzd=(p!=null)?toNZD(p,s.ccy):null;
+      // Qty cell
+      h+=`<td class="qty-cell" data-tube="${t.id}" data-sup="${s.id}" data-cell="qty">`;
+      h+=`<input class="qty-input" type="number" min="1" step="1" value="${qty}" onchange="upQty('${s.id}',${t.id},this.value)" title="Quantity">`;
+      h+=`</td>`;
+      // Price cell
+      h+=`<td class="price-cell" data-tube="${t.id}" data-sup="${s.id}" data-cell="price"><div class="price-wrap">`;
+      h+=`<input class="price-input" type="number" step="0.01" ${p!=null?`value="${p}"`:''}  placeholder="\u2014" onchange="upPrice('${s.id}',${t.id},this.value)">`;
+      if(p!=null&&s.ccy!=='NZD')h+=`<span class="nzd-equiv" id="ne-${s.id}-${t.id}">${fmt(nzd)} NZD</span>`;
+      h+=`</div></td>`;
     });
-    h += '</tr>';
+    h+=`</tr>`;
   });
-  document.getElementById('tbody').innerHTML = h;
+  document.getElementById('tbody').innerHTML=h;
 }
 
-function renderFoot() {
-  let h = `<tr><td colspan="3">Total ex-GST (NZD)</td>`;
-  sups.forEach(s => {
-    let tot = 0;
-    TUBES.forEach(t => { const p = s.prices[t.id]; if (p != null) tot += toNZD(p, s.ccy); });
-    h += `<td class="total-val">${tot > 0 ? fmt(tot) : '—'}</td>`;
+function renderFoot(){
+  let h='<tr><td colspan="2" style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Total ex-GST (NZD)</td>';
+  sups.forEach(s=>{
+    let tot=0;
+    TUBES.forEach(t=>{
+      const p=s.prices[t.id];const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
+      if(p!=null)tot+=toNZD(p,s.ccy)*qty;
+    });
+    h+=`<td class="total-qty"></td><td class="total-val">${tot>0?fmt(tot):'—'}</td>`;
   });
-  h += '</tr>';
-  document.getElementById('tfoot').innerHTML = h;
+  h+='</tr>';
+  document.getElementById('tfoot').innerHTML=h;
 }
 
-function highlight() {
-  TUBES.forEach(t => {
-    const vals = [];
-    sups.forEach(s => { const p = s.prices[t.id]; if (p != null) vals.push(toNZD(p, s.ccy)); });
-    const mn = vals.length > 1 ? Math.min(...vals) : null;
-    sups.forEach(s => {
-      const td = document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"]`);
-      if (!td) return;
-      const p = s.prices[t.id];
-      if (mn != null && p != null && Math.abs(toNZD(p, s.ccy) - mn) < 0.005) {
-        td.classList.add('cheap');
-      } else {
-        td.classList.remove('cheap');
-      }
+function highlight(){
+  TUBES.forEach(t=>{
+    const vals=[];
+    sups.forEach(s=>{
+      const p=s.prices[t.id];const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
+      if(p!=null)vals.push(toNZD(p,s.ccy)*qty);
+    });
+    const mn=vals.length>1?Math.min(...vals):null;
+    sups.forEach(s=>{
+      const pTd=document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"][data-cell="price"]`);
+      const qTd=document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"][data-cell="qty"]`);
+      if(!pTd)return;
+      const p=s.prices[t.id];const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
+      const isCheap=mn!=null&&p!=null&&Math.abs(toNZD(p,s.ccy)*qty-mn)<0.005;
+      pTd.classList.toggle('cheap-price',isCheap);
+      if(qTd)qTd.classList.toggle('cheap-qty',isCheap);
     });
   });
 }
 
-function renderTable() { renderHead(); renderBody(); renderFoot(); highlight(); }
+function renderTable(){renderHead();renderBody();renderFoot();highlight();}
 
 // --- Mutations ---
-function upPrice(sid, tid, val) {
-  const s = sups.find(x => x.id === sid);
-  if (!s) return;
-  const p = parseFloat(val);
-  if (!val || isNaN(p)) { delete s.prices[tid]; } else { s.prices[tid] = p; }
-  // Update NZD equiv inline
-  const td = document.querySelector(`td[data-tube="${tid}"][data-sup="${sid}"]`);
-  if (td && !s.locked && s.ccy !== 'NZD') {
-    let ne = td.querySelector('.nzd-equiv');
-    if (p && !isNaN(p)) {
-      if (!ne) { ne = document.createElement('span'); ne.className = 'nzd-equiv'; td.querySelector('.price-wrap').appendChild(ne); }
-      ne.textContent = fmt(toNZD(p, s.ccy)) + ' NZD';
-    } else if (ne) { ne.remove(); }
+function upPrice(sid,tid,val){
+  const s=sups.find(x=>x.id===sid);if(!s)return;
+  const p=parseFloat(val);
+  if(!val||isNaN(p)){delete s.prices[tid];}else{s.prices[tid]=p;}
+  if(!s.locked&&s.ccy!=='NZD'){
+    const ne=document.getElementById(`ne-${sid}-${tid}`);
+    if(p&&!isNaN(p)){
+      const qty=s.qtys[tid]!=null?s.qtys[tid]:TUBES.find(t=>t.id===tid).defQty;
+      if(ne){ne.textContent=fmt(toNZD(p,s.ccy))+' NZD';}
+    }else if(ne){ne.remove();}
   }
-  renderFoot(); highlight(); save();
+  renderFoot();highlight();save();
 }
-
-function supName(sid, v) { const s = sups.find(x => x.id === sid); if (s) { s.name = v; save(); } }
-function supCcy(sid, v)  { const s = sups.find(x => x.id === sid); if (s) { s.ccy = v; renderTable(); save(); } }
-function delSup(sid) { sups = sups.filter(x => x.id !== sid); renderTable(); save(); }
-function addSup() { sups.push({id:'s'+nid++, name:'', ccy:'NZD', locked:false, prices:{}}); renderTable(); save(); }
-
-function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function upQty(sid,tid,val){
+  const s=sups.find(x=>x.id===sid);if(!s)return;
+  const q=parseInt(val);
+  s.qtys[tid]=(!val||isNaN(q)||q<1)?1:q;
+  renderFoot();highlight();save();
+}
+function supName(sid,v){const s=sups.find(x=>x.id===sid);if(s){s.name=v;save();}}
+function supCcy(sid,v){const s=sups.find(x=>x.id===sid);if(s){s.ccy=v;renderTable();save();}}
+function delSup(sid){sups=sups.filter(x=>x.id!==sid);renderTable();save();}
+function addSup(){sups.push({id:'s'+nid++,name:'',ccy:'NZD',locked:false,prices:{},qtys:mkDefQtys()});renderTable();save();}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 
 // --- Init ---
-loadState();
-renderTable();
-fetchRates();
+loadConfig();localLoad();renderTable();fetchRates();
+if(hasCloud()){syncFromCloud();}
 </script>
 </body>
 </html>
