@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Garage NZ — Tube Price Comparator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface2: #f1efe9;
+    --border: #e0ddd5;
+    --border2: #ccc9bf;
+    --text: #1a1917;
+    --text2: #6b6860;
+    --text3: #9b9890;
+    --green-bg: #f0fdf4;
+    --green: #16a34a;
+    --green-border: #bbf7d0;
+    --red: #dc2626;
+    --blue: #2563eb;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141412;
+      --surface: #1e1d1b;
+      --surface2: #28261f;
+      --border: #3a3830;
+      --border2: #4a4840;
+      --text: #f0ede6;
+      --text2: #9b9890;
+      --text3: #6b6860;
+      --green-bg: #052e16;
+      --green: #4ade80;
+      --green-border: #166534;
+    }
+  }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+  .container { max-width: 100%; padding: 1.5rem 1.25rem 4rem; }
+
+  /* Header */
+  .header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 1.25rem; }
+  .header h1 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .header p { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+
+  /* Rates bar */
+  .rates-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 10px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.25rem;
+  }
+  .rates-label { font-size: 11px; font-weight: 600; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+  .rate-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 5px;
+    padding: 3px 9px; font-family: var(--mono); font-size: 12px;
+  }
+  .rate-pill .ccy { color: var(--text2); font-size: 10px; font-weight: 700; }
+  .rate-pill .eq { color: var(--text3); font-size: 10px; margin: 0 2px; }
+  .rate-pill input {
+    width: 54px; text-align: right; font-family: var(--mono); font-size: 12px;
+    font-weight: 600; color: var(--text); border: none; background: transparent; outline: none; padding: 0;
+  }
+  .rate-pill .unit { color: var(--text3); font-size: 10px; }
+  .rates-meta { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+  .dot.live { background: #22c55e; }
+  .dot.err { background: var(--red); }
+
+  /* Table wrapper */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; }
+
+  /* Head */
+  thead th {
+    padding: 10px 13px; text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text2); border-bottom: 1px solid var(--border);
+    white-space: nowrap; vertical-align: bottom; background: var(--surface2);
+  }
+  thead th:first-child { border-radius: 10px 0 0 0; }
+  thead th.sup-th { text-align: center; min-width: 130px; position: relative; padding: 8px 24px 8px 12px; }
+  .sup-name { font-size: 12px; font-weight: 600; color: var(--text); background: transparent; border: none; border-bottom: 1px dashed var(--border2); text-align: center; width: 100%; outline: none; padding: 2px 4px; margin-bottom: 4px; display: block; font-family: var(--sans); }
+  .sup-name::placeholder { color: var(--text3); font-weight: 400; }
+  .sup-ccy { font-size: 11px; font-family: var(--mono); color: var(--text2); background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 5px; outline: none; cursor: pointer; }
+  .del-btn { position: absolute; top: 4px; right: 6px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; line-height: 1; opacity: .5; padding: 0; }
+  .del-btn:hover { opacity: 1; color: var(--red); }
+
+  /* Body */
+  tbody tr { transition: background .1s; }
+  tbody tr:hover td { background: var(--surface2); }
+  td { padding: 8px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.col-type { font-family: var(--mono); font-size: 13px; font-weight: 700; white-space: nowrap; min-width: 65px; }
+  td.col-brand { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  td.col-qty { font-size: 11px; font-family: var(--mono); color: var(--text3); white-space: nowrap; }
+  td.price-cell { text-align: center; vertical-align: middle; }
+  .price-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .price-input {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    border: none; background: transparent; text-align: center;
+    color: var(--text); outline: none; width: 90px; padding: 2px 4px; border-radius: 4px;
+  }
+  .price-input:focus { background: var(--surface2); }
+  .price-input::placeholder { color: var(--border2); font-weight: 400; font-size: 18px; }
+  .nzd-equiv { font-size: 10px; font-family: var(--mono); color: var(--text2); }
+  td.cheap { background: var(--green-bg) !important; outline: 1px solid var(--green-border); }
+  td.cheap .price-input { color: var(--green) !important; }
+  td.cheap .nzd-equiv { color: var(--green); opacity: .8; }
+
+  /* Foot */
+  tfoot td {
+    padding: 10px 13px; border-top: 2px solid var(--border);
+    font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .total-val { font-family: var(--mono); font-size: 14px; font-weight: 700; text-align: center; color: var(--text); }
+
+  /* Add supplier */
+  .add-wrap { margin-top: 1rem; }
+  .add-btn {
+    padding: 8px 20px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px dashed var(--border2); border-radius: 8px;
+    background: transparent; color: var(--text2); font-family: var(--sans);
+    transition: all .15s;
+  }
+  .add-btn:hover { border-color: var(--border); color: var(--text); background: var(--surface); }
+
+  /* Footer note */
+  .footnote { margin-top: 1.5rem; font-size: 11px; color: var(--text3); font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Tube Price Comparator</h1>
+    <p>Guitar Garage NZ</p>
+  </div>
+
+  <div class="rates-bar">
+    <span class="rates-label">Rates to NZD</span>
+    <div class="rate-pill"><span class="ccy">EUR</span><span class="eq">=</span><input id="r-EUR" type="number" step="0.0001" value="2.0300" onchange="updateRate('EUR',this.value)"><span class="unit">NZD</span></div>
+    <div class="rate-pill"><span class="ccy">AUD</span><span class="eq">=</span><input id="r-AUD" type="number" step="0.0001" value="1.1600" onchange="updateRate('AUD',this.value)"><span class="unit">NZD</span></div>
+    <div class="rate-pill"><span class="ccy">GBP</span><span class="eq">=</span><input id="r-GBP" type="number" step="0.0001" value="2.3400" onchange="updateRate('GBP',this.value)"><span class="unit">NZD</span></div>
+    <div class="rate-pill"><span class="ccy">USD</span><span class="eq">=</span><input id="r-USD" type="number" step="0.0001" value="1.7300" onchange="updateRate('USD',this.value)"><span class="unit">NZD</span></div>
+    <div class="rates-meta"><div class="dot" id="sdot"></div><span id="rts">fetching live rates...</span></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead id="thead"></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot id="tfoot"></tfoot>
+    </table>
+  </div>
+
+  <div class="add-wrap">
+    <button class="add-btn" onclick="addSup()">+ Add supplier</button>
+  </div>
+
+  <p class="footnote">Rates fetched live from api.frankfurter.app on page load. Click any rate to edit manually. Green = cheapest NZD per line item. All prices ex-GST.</p>
+</div>
+
+<script>
+const TUBES = [
+  {id:0, type:'EL34',  qty:'matched pair', brand:'Svetlana'},
+  {id:1, type:'EL84',  qty:'quartet',      brand:'Electro-Harmonix'},
+  {id:2, type:'EL84',  qty:'quartet',      brand:'Sovtek'},
+  {id:3, type:'EL84',  qty:'quartet',      brand:'JJ'},
+  {id:4, type:'EF86',  qty:'x1',           brand:'Electro-Harmonix'},
+  {id:5, type:'GZ34',  qty:'x1',           brand:'Sovtek'},
+  {id:6, type:'GZ34',  qty:'x1',           brand:'Tung-Sol'},
+  {id:7, type:'6V6',   qty:'matched pair', brand:'Electro-Harmonix'},
+  {id:8, type:'6V6',   qty:'matched pair', brand:'Tung-Sol'},
+  {id:9, type:'12AX7', qty:'x4 (each)',    brand:'Electro-Harmonix'},
+  {id:10,type:'12AX7', qty:'x4 (each)',    brand:'Svetlana'},
+  {id:11,type:'12AX7', qty:'x4 (each)',    brand:'Tung-Sol'}
+];
+
+const SP_DEF = {0:156.52,1:222.61,2:194.09,3:160.00,4:33.48,5:68.87,6:82.78,7:138.43,8:166.26,9:54.96,10:61.91,11:66.09};
+const CCYS = ['NZD','AUD','USD','EUR','GBP'];
+
+let rates = {NZD:1, EUR:2.03, AUD:1.16, GBP:2.34, USD:1.73};
+let sups = [{id:'sp', name:'South Pac', ccy:'NZD', locked:true, prices:{...SP_DEF}}];
+let nid = 1;
+
+// --- Storage (localStorage) ---
+function save() {
+  try {
+    localStorage.setItem('ggnz-sups', JSON.stringify(sups.filter(s => !s.locked)));
+    localStorage.setItem('ggnz-sp', JSON.stringify(sups[0].prices));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const extra = JSON.parse(localStorage.getItem('ggnz-sups') || 'null');
+    if (extra && Array.isArray(extra)) { sups = [sups[0], ...extra]; nid = extra.length + 1; }
+    const sp = JSON.parse(localStorage.getItem('ggnz-sp') || 'null');
+    if (sp) sups[0].prices = {...SP_DEF, ...sp};
+  } catch(e) {}
+}
+
+// --- Exchange rates ---
+function toNZD(p, c) { return p * (rates[c] || 1); }
+function fmt(n) { return '$' + n.toFixed(2); }
+function updateRate(c, v) { rates[c] = parseFloat(v) || 1; renderTable(); }
+
+async function fetchRates() {
+  const dot = document.getElementById('sdot');
+  const ts  = document.getElementById('rts');
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=NZD&to=EUR,AUD,GBP,USD');
+    if (!res.ok) throw new Error(res.status);
+    const d = await res.json();
+    // d.rates are NZD→foreign; invert for foreign→NZD
+    for (const [c, r] of Object.entries(d.rates)) { rates[c] = 1 / r; }
+    ['EUR','AUD','GBP','USD'].forEach(c => {
+      const el = document.getElementById('r-' + c);
+      if (el) el.value = rates[c].toFixed(4);
+    });
+    dot.className = 'dot live';
+    ts.textContent = 'live  —  ' + d.date;
+    renderTable();
+  } catch(e) {
+    dot.className = 'dot err';
+    ts.textContent = 'live fetch failed — using saved rates';
+  }
+}
+
+// --- Render ---
+function renderHead() {
+  let h = '<tr><th>Tube</th><th>Brand</th><th>Qty</th>';
+  sups.forEach(s => {
+    h += `<th class="sup-th">`;
+    if (s.locked) {
+      h += `<div style="font-size:13px;font-weight:700;margin-bottom:3px">${s.name}</div>`;
+      h += `<div style="font-size:10px;font-weight:400;color:var(--text3)">NZD ex-GST</div>`;
+    } else {
+      h += `<button class="del-btn" onclick="delSup('${s.id}')" title="Remove supplier">&#x2715;</button>`;
+      h += `<input class="sup-name" placeholder="Supplier name" value="${escHtml(s.name)}" onchange="supName('${s.id}',this.value)">`;
+      h += `<select class="sup-ccy" onchange="supCcy('${s.id}',this.value)">`;
+      CCYS.forEach(c => { h += `<option value="${c}"${c===s.ccy?' selected':''}>${c}</option>`; });
+      h += `</select>`;
+    }
+    h += `</th>`;
+  });
+  h += '</tr>';
+  document.getElementById('thead').innerHTML = h;
+}
+
+function renderBody() {
+  let h = '';
+  TUBES.forEach(t => {
+    h += `<tr><td class="col-type">${t.type}</td><td class="col-brand">${t.brand}</td><td class="col-qty">${t.qty}</td>`;
+    sups.forEach(s => {
+      const p   = s.prices[t.id];
+      const nzd = (p != null) ? toNZD(p, s.ccy) : null;
+      h += `<td class="price-cell" data-tube="${t.id}" data-sup="${s.id}"><div class="price-wrap">`;
+      h += `<input class="price-input" type="number" step="0.01" ${p != null ? `value="${p}"` : ''} placeholder="—" onchange="upPrice('${s.id}',${t.id},this.value)">`;
+      if (p != null && s.ccy !== 'NZD') {
+        h += `<span class="nzd-equiv">${fmt(nzd)} NZD</span>`;
+      }
+      h += `</div></td>`;
+    });
+    h += '</tr>';
+  });
+  document.getElementById('tbody').innerHTML = h;
+}
+
+function renderFoot() {
+  let h = `<tr><td colspan="3">Total ex-GST (NZD)</td>`;
+  sups.forEach(s => {
+    let tot = 0;
+    TUBES.forEach(t => { const p = s.prices[t.id]; if (p != null) tot += toNZD(p, s.ccy); });
+    h += `<td class="total-val">${tot > 0 ? fmt(tot) : '—'}</td>`;
+  });
+  h += '</tr>';
+  document.getElementById('tfoot').innerHTML = h;
+}
+
+function highlight() {
+  TUBES.forEach(t => {
+    const vals = [];
+    sups.forEach(s => { const p = s.prices[t.id]; if (p != null) vals.push(toNZD(p, s.ccy)); });
+    const mn = vals.length > 1 ? Math.min(...vals) : null;
+    sups.forEach(s => {
+      const td = document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"]`);
+      if (!td) return;
+      const p = s.prices[t.id];
+      if (mn != null && p != null && Math.abs(toNZD(p, s.ccy) - mn) < 0.005) {
+        td.classList.add('cheap');
+      } else {
+        td.classList.remove('cheap');
+      }
+    });
+  });
+}
+
+function renderTable() { renderHead(); renderBody(); renderFoot(); highlight(); }
+
+// --- Mutations ---
+function upPrice(sid, tid, val) {
+  const s = sups.find(x => x.id === sid);
+  if (!s) return;
+  const p = parseFloat(val);
+  if (!val || isNaN(p)) { delete s.prices[tid]; } else { s.prices[tid] = p; }
+  // Update NZD equiv inline
+  const td = document.querySelector(`td[data-tube="${tid}"][data-sup="${sid}"]`);
+  if (td && !s.locked && s.ccy !== 'NZD') {
+    let ne = td.querySelector('.nzd-equiv');
+    if (p && !isNaN(p)) {
+      if (!ne) { ne = document.createElement('span'); ne.className = 'nzd-equiv'; td.querySelector('.price-wrap').appendChild(ne); }
+      ne.textContent = fmt(toNZD(p, s.ccy)) + ' NZD';
+    } else if (ne) { ne.remove(); }
+  }
+  renderFoot(); highlight(); save();
+}
+
+function supName(sid, v) { const s = sups.find(x => x.id === sid); if (s) { s.name = v; save(); } }
+function supCcy(sid, v)  { const s = sups.find(x => x.id === sid); if (s) { s.ccy = v; renderTable(); save(); } }
+function delSup(sid) { sups = sups.filter(x => x.id !== sid); renderTable(); save(); }
+function addSup() { sups.push({id:'s'+nid++, name:'', ccy:'NZD', locked:false, prices:{}}); renderTable(); save(); }
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// --- Init ---
+loadState();
+renderTable();
+fetchRates();
+</script>
+</body>
+</html>
