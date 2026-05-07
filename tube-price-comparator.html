@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guitar Garage NZ — Tube Price Comparator v1.9</title>
+<title>Guitar Garage NZ — Tube Price Comparator v2.2</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -76,11 +76,13 @@
     color:var(--text3);font-size:18px;line-height:1;opacity:.4;padding:0;}
   .del-btn:hover{opacity:1;color:var(--red);}
 
-  /* Sub-headers for qty / price inside each supplier group */
+  /* Sub-headers for qty / unit / total inside each supplier group */
   th.sub-qty{font-size:10px;font-weight:600;color:var(--text3);text-align:center;
     width:54px;min-width:54px;border-left:2px solid var(--border);padding:4px 6px;
     text-transform:uppercase;letter-spacing:.04em;}
   th.sub-price{font-size:10px;font-weight:600;color:var(--text3);text-align:center;
+    min-width:100px;padding:4px 8px;text-transform:uppercase;letter-spacing:.04em;}
+  th.sub-total{font-size:10px;font-weight:600;color:var(--text3);text-align:center;
     min-width:110px;padding:4px 10px;text-transform:uppercase;letter-spacing:.04em;}
 
   /* Body */
@@ -105,6 +107,10 @@
   .price-input:focus{background:var(--surface2);}
   .price-input::placeholder{color:var(--border2);font-weight:400;font-size:20px;}
   .nzd-equiv{font-size:10px;font-family:var(--mono);color:var(--text2);}
+
+  /* Line total cell */
+  td.total-cell{text-align:center;vertical-align:middle;padding:6px 10px;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);}
+  td.total-cell.empty{color:var(--text3);}
 
   /* Cheapest highlight applies to BOTH qty and price cells via shared row class */
   td.cheap-qty{background:var(--green-bg)!important;outline:1px solid var(--green-border);}
@@ -139,7 +145,7 @@
 
   <div class="header">
     <h1>Tube Price Comparator</h1>
-    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v1.9</span></p>
+    <p>Guitar Garage NZ &mdash; <span style="font-family:var(--mono);font-size:11px;color:var(--text3)">v2.2</span></p>
     <div class="sync-status">
       <div class="sync-dot" id="sync-dot"></div>
       <span id="sync-label"></span>
@@ -181,7 +187,7 @@
     <button class="cfg-btn" onclick="toggleSetup()">&#9881; Sync settings</button>
   </div>
 
-  <p class="footnote">Rates fetched live from api.frankfurter.app (ECB) on every page load. Green = cheapest NZD total per line. All prices ex-GST.</p>
+  <p class="footnote">Rates fetched live on every page load (multiple sources with fallback). Green = cheapest NZD total per line. All prices ex-GST.</p>
 </div>
 
 <script>
@@ -343,7 +349,7 @@ function renderHead(){
       h+=`<div style="font-size:10px;font-weight:400;color:var(--text3)">${s.ccy} ex-GST</div>`;
       h+=`</th>`;
     }else{
-      h+=`<th class="sup-group" colspan="2">`;
+      h+=`<th class="sup-group" colspan="3">`;
       h+=`<button class="del-btn" onclick="delSup('${s.id}')" title="Remove">&#x2715;</button>`;
       h+=`<input class="sup-name" placeholder="Supplier name" value="${esc(s.name)}" onchange="supName('${s.id}',this.value)">`;
       h+=`<select class="sup-ccy" onchange="supCcy('${s.id}',this.value)">`;
@@ -355,7 +361,7 @@ function renderHead(){
   // Row 2: sub-headers
   h+='<tr>';
   sups.forEach(()=>{
-    h+=`<th class="sub-qty">Qty</th><th class="sub-price">Price</th>`;
+    h+=`<th class="sub-qty">Qty</th><th class="sub-price">Unit</th><th class="sub-total">Total</th>`;
   });
   h+='</tr>';
   document.getElementById('thead').innerHTML=h;
@@ -373,13 +379,16 @@ function renderBody(){
       const nzd=(p!=null)?toNZD(p,s.ccy):null;
       // Qty cell
       h+=`<td class="qty-cell" data-tube="${t.id}" data-sup="${s.id}" data-cell="qty">`;
-      h+=`<input class="qty-input" type="number" min="1" step="1" value="${qty}" onchange="upQty('${s.id}',${t.id},this.value)" title="Quantity">`;
+      h+=`<input class="qty-input" type="number" min="0" step="1" value="${qty}" onchange="upQty(\'${s.id}\',${t.id},this.value,this)" title="Quantity">`;
       h+=`</td>`;
-      // Price cell
+      // Unit price cell
       h+=`<td class="price-cell" data-tube="${t.id}" data-sup="${s.id}" data-cell="price"><div class="price-wrap">`;
       h+=`<input class="price-input" type="number" step="0.01" ${p!=null?`value="${p}"`:''}  placeholder="\u2014" onchange="upPrice('${s.id}',${t.id},this.value)">`;
       if(p!=null&&s.ccy!=='NZD')h+=`<span class="nzd-equiv" id="ne-${s.id}-${t.id}">${fmt(nzd)} NZD</span>`;
       h+=`</div></td>`;
+      // Line total cell (qty x unit price, always in NZD)
+      const lineTotal=(p!=null)?toNZD(p,s.ccy)*qty:null;
+      h+=`<td class="total-cell${lineTotal==null?' empty':''}" data-tube="${t.id}" data-sup="${s.id}" data-cell="linetotal">${lineTotal!=null?fmt(lineTotal):'\u2014'}</td>`;
     });
     h+=`</tr>`;
   });
@@ -394,7 +403,7 @@ function renderFoot(){
       const p=s.prices[t.id];const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
       if(p!=null)tot+=toNZD(p,s.ccy)*qty;
     });
-    h+=`<td class="total-qty"></td><td class="total-val">${tot>0?fmt(tot):'—'}</td>`;
+    h+=`<td class="total-qty" style="border-left:2px solid var(--border)"></td><td></td><td class="total-val">${tot>0?fmt(tot):'—'}</td>`;
   });
   h+='</tr>';
   document.getElementById('tfoot').innerHTML=h;
@@ -411,11 +420,13 @@ function highlight(){
     sups.forEach(s=>{
       const pTd=document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"][data-cell="price"]`);
       const qTd=document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"][data-cell="qty"]`);
+      const lTd=document.querySelector(`td[data-tube="${t.id}"][data-sup="${s.id}"][data-cell="linetotal"]`);
       if(!pTd)return;
       const p=s.prices[t.id];const qty=s.qtys[t.id]!=null?s.qtys[t.id]:t.defQty;
       const isCheap=mn!=null&&p!=null&&Math.abs(toNZD(p,s.ccy)*qty-mn)<0.005;
       pTd.classList.toggle('cheap-price',isCheap);
       if(qTd)qTd.classList.toggle('cheap-qty',isCheap);
+      if(lTd)lTd.classList.toggle('cheap-price',isCheap);
     });
   });
 }
@@ -434,12 +445,35 @@ function upPrice(sid,tid,val){
       if(ne){ne.textContent=fmt(toNZD(p,s.ccy))+' NZD';}
     }else if(ne){ne.remove();}
   }
+  // Update line total cell inline
+  const lTd=document.querySelector(`td[data-tube="${tid}"][data-sup="${sid}"][data-cell="linetotal"]`);
+  if(lTd){
+    const s2=sups.find(x=>x.id===sid);
+    if(s2){
+      const pp=s2.prices[tid];const qq=s2.qtys[tid]!=null?s2.qtys[tid]:TUBES.find(t=>t.id===tid).defQty;
+      if(pp!=null){lTd.textContent=fmt(toNZD(pp,s2.ccy)*qq);lTd.classList.remove('empty');}
+      else{lTd.textContent='\u2014';lTd.classList.add('empty');}
+    }
+  }
   renderFoot();highlight();save();
 }
-function upQty(sid,tid,val){
+function upQty(sid,tid,val,el){
   const s=sups.find(x=>x.id===sid);if(!s)return;
   const q=parseInt(val);
-  s.qtys[tid]=(!val||isNaN(q)||q<1)?1:q;
+  const stored=(!val||isNaN(q)||q<0)?0:q;
+  s.qtys[tid]=stored;
+  // Keep display in sync with stored value
+  if(el&&stored!==q)el.value=stored;
+  // Update line total cell inline
+  const lTd=document.querySelector(`td[data-tube="${tid}"][data-sup="${sid}"][data-cell="linetotal"]`);
+  if(lTd){
+    const s2=sups.find(x=>x.id===sid);
+    if(s2){
+      const pp=s2.prices[tid];
+      if(pp!=null){lTd.textContent=fmt(toNZD(pp,s2.ccy)*stored);lTd.classList.remove('empty');}
+      else{lTd.textContent='\u2014';lTd.classList.add('empty');}
+    }
+  }
   renderFoot();highlight();save();
 }
 function supName(sid,v){const s=sups.find(x=>x.id===sid);if(s){s.name=v;save();}}
